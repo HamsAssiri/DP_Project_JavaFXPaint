@@ -6,6 +6,7 @@ import paint.model.Shape;
 
 
 public class CanvasManager {
+     // private 
  private static CanvasManager instance=null;
     private ArrayList<Shape> shapeList;
 
