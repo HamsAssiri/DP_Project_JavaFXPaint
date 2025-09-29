@@ -104,7 +104,10 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
     private Point2D start;
     private Point2D end;
     
-    //SINGLETON DP
+    //SINGLETON DP - Canvas Manager
+    private CanvasManager canvasManager;
+    
+    //Shape list management
     private static ArrayList<Shape> shapeList = new ArrayList<Shape>();
     
     private boolean move=false;
@@ -115,8 +118,8 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
     private boolean importt =false;
     
     //MEMENTO DP
-    private Stack primary = new Stack<ArrayList<Shape>>();
-    private Stack secondary = new Stack<ArrayList<Shape>>();
+    private Stack<ArrayList<Shape>> primary = new Stack<ArrayList<Shape>>();
+    private Stack<ArrayList<Shape>> secondary = new Stack<ArrayList<Shape>>();
 
 
     
@@ -141,7 +144,9 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
             if(!ShapeList.getSelectionModel().isEmpty()){
                 int index = ShapeList.getSelectionModel().getSelectedIndex();
                 shapeList.get(index).setFillColor(ColorBox.getValue());
-                refresh(CanvasBox);
+                // Use CanvasManager singleton for refresh operations
+                canvasManager.redrawAll(shapeList);
+                ShapeList.setItems((getStringList()));
             }else{
                 Message.setText("You need to pick a shape first to recolor it.");
             }
@@ -236,7 +241,9 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
     public void moveFunction(){
         int index = ShapeList.getSelectionModel().getSelectedIndex();
         shapeList.get(index).setTopLeft(start);
-        refresh(CanvasBox);
+        // Use CanvasManager singleton for refresh operations
+        canvasManager.redrawAll(shapeList);
+        ShapeList.setItems((getStringList()));
     }
     
     public void copyFunction() throws CloneNotSupportedException{
@@ -246,7 +253,9 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
         else{
             shapeList.add(temp);
             shapeList.get(shapeList.size()-1).setTopLeft(start);
-            refresh(CanvasBox);
+            // Use CanvasManager singleton for refresh operations
+            canvasManager.redrawAll(shapeList);
+            ShapeList.setItems((getStringList()));
         }
     }
     
@@ -260,8 +269,9 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
         shapeList.remove(index);
         temp.setFillColor(c);
         shapeList.add(index, temp);
-        refresh(CanvasBox);
-        
+        // Use CanvasManager singleton for refresh operations
+        canvasManager.redrawAll(shapeList);
+        ShapeList.setItems((getStringList()));
     }
     
     public void dragFunction(){
@@ -271,8 +281,8 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
         try{sh = new ShapeFactory().createShape(type,start,end,ColorBox.getValue());}catch(Exception e)
         {Message.setText("Don't be in a hurry! Choose a shape first :'D");return;}
         addShape(sh);
-        sh.draw(CanvasBox);
-        
+        // Use CanvasManager singleton for drawing operations
+        canvasManager.drawShape(sh);
     }
     
     
@@ -304,6 +314,10 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
         ShapeBox.setItems(shapeList);
         
         ColorBox.setValue(Color.BLACK);
+        
+        // Initialize Canvas Manager Singleton
+        canvasManager = CanvasManager.getInstance();
+        canvasManager.initializeCanvas(CanvasBox);
     }
 
     @Override
@@ -313,18 +327,14 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
         } catch (CloneNotSupportedException ex) {
             Logger.getLogger(FXMLDocumentController.class.getName()).log(Level.SEVERE, null, ex);
         }
-        redraw((Canvas) canvas);
-       ShapeList.setItems((getStringList()));
+        // Use CanvasManager singleton for drawing operations
+        canvasManager.redrawAll(shapeList);
+        ShapeList.setItems((getStringList()));
     }
     
     public void redraw(Canvas canvas){
-        GraphicsContext gc = canvas.getGraphicsContext2D();
-        gc.clearRect(0, 0, 850, 370);
-        try{
-        for(int i=0;i<shapeList.size();i++){
-            shapeList.get(i).draw(canvas);
-        }
-        }catch(Exception e){}
+        // Use CanvasManager singleton for redrawing
+        canvasManager.redrawAll(shapeList);
     }
 
     @Override
@@ -360,7 +370,8 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
         if(primary.empty()){shapeList = new ArrayList();}
         else{temp = (ArrayList) primary.peek(); shapeList = temp;}
         
-        redraw(CanvasBox);
+        // Use CanvasManager singleton for redrawing
+        canvasManager.redrawAll(shapeList);
         ShapeList.setItems((getStringList()));
         }else{Message.setText("Sorry, Cannot do more than 20 Undo's :'(");}
     }
@@ -373,7 +384,8 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
         temp = (ArrayList) primary.peek();
         shapeList = temp;
         
-        redraw(CanvasBox);
+        // Use CanvasManager singleton for redrawing
+        canvasManager.redrawAll(shapeList);
         ShapeList.setItems((getStringList()));
     }
 
