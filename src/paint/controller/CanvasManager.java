@@ -1,6 +1,9 @@
 package paint.controller;
 
 import java.util.ArrayList;
+import java.util.Stack;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
@@ -51,14 +54,9 @@ public class CanvasManager {
         return canvas;
     }
     
-    public GraphicsContext getGraphicsContext() {
-        return graphicsContext;
-    }
-    
     public void clearCanvas() {
         if (graphicsContext != null) {
             graphicsContext.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
-            // Set default background color to white
             graphicsContext.setFill(Color.WHITE);
             graphicsContext.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
         }
@@ -74,11 +72,7 @@ public class CanvasManager {
         if (canvas == null || graphicsContext == null) {
             return;
         }
-        
-        // Clear the canvas
         clearCanvas();
-        
-        // Draw all shapes
         if (shapes != null) {
             for (Shape shape : shapes) {
                 if (shape != null) {
@@ -88,49 +82,20 @@ public class CanvasManager {
         }
     }
     
-    public double[] getCanvasDimensions() {
-        if (canvas != null) {
-            return new double[]{canvas.getWidth(), canvas.getHeight()};
+    public void refreshWithHistory(ArrayList<Shape> shapes, Stack<ArrayList<Shape>> historyStack) {
+        try {
+            historyStack.push(new ArrayList<>(cloneList(shapes)));
+        } catch (CloneNotSupportedException ex) {
+            Logger.getLogger(CanvasManager.class.getName()).log(Level.SEVERE, null, ex);
         }
-        return new double[]{DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT};
+        redrawAll(shapes);
     }
     
-    public boolean isCanvasReady() {
-        return canvas != null && graphicsContext != null;
-    }
-    
-
-    public void setCanvasBackground(Color color) {
-        if (graphicsContext != null) {
-            graphicsContext.setFill(color);
-            graphicsContext.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
+    private ArrayList<Shape> cloneList(ArrayList<Shape> shapes) throws CloneNotSupportedException {
+        ArrayList<Shape> clonedList = new ArrayList<>();
+        for (Shape shape : shapes) {
+            clonedList.add(shape.cloneShape());
         }
-    }
-    
-
-    public boolean isWithinCanvasBounds(double x, double y) {
-        if (canvas == null) {
-            return false;
-        }
-        return x >= 0 && x <= canvas.getWidth() && y >= 0 && y <= canvas.getHeight();
-    }
-    
-    public double getCanvasWidth() {
-        return canvas != null ? canvas.getWidth() : DEFAULT_CANVAS_WIDTH;
-    }
-    
-
-    public double getCanvasHeight() {
-        return canvas != null ? canvas.getHeight() : DEFAULT_CANVAS_HEIGHT;
-    }
-    
-
-    @Override
-    protected Object clone() throws CloneNotSupportedException {
-        throw new CloneNotSupportedException("Cloning of CanvasManager singleton is not allowed");
-    }
-    
-    public static synchronized void resetInstance() {
-        instance = null;
+        return clonedList;
     }
 }
