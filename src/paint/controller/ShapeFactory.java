@@ -19,7 +19,7 @@ public class ShapeFactory implements IShapeFactory {
         initializeDefaultShapes();
     }
     
-    public static synchronized ShapeFactory getInstance() {
+    public static synchronized IShapeFactory getInstance() {
         if (instance == null) {
             instance = new ShapeFactory();
         }
