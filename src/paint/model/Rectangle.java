@@ -7,7 +7,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 
 
-public class Rectangle extends Shape{
+public class Rectangle extends Shape implements iShape{
     private double width;
     private double height;
 
@@ -60,5 +60,16 @@ public class Rectangle extends Shape{
         gc.setFill(super.getFillColor());
         gc.fillRect(super.getTopLeft().getX(), super.getTopLeft().getY(), width, height);
     }
+    
+    @Override
+    public String getType() {
+        return "Rectangle";
+    }
+    
+    // Ensure clone returns IShape
+    @Override
+    public iShape clone() throws CloneNotSupportedException {
+        return (iShape) super.clone();
+    } 
     
 }

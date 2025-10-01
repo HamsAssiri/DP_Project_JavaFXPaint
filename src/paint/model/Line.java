@@ -7,7 +7,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 
 
-public class Line extends Shape{
+public class Line extends Shape implements iShape{
     
     private double length;
     
@@ -44,5 +44,14 @@ public class Line extends Shape{
         
         
     }
+    @Override
+    public String getType() {
+        return "Line";
+    }
     
+    // Ensure clone returns IShape
+    @Override
+    public iShape clone() throws CloneNotSupportedException {
+        return (iShape) super.clone();
+    } 
 }

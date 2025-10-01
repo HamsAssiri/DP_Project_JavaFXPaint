@@ -8,6 +8,7 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import paint.model.Shape;
+import paint.model.iShape;
 
 public class CanvasManager {
     
@@ -62,19 +63,19 @@ public class CanvasManager {
         }
     }
     
-    public void drawShape(Shape shape) {
+    public void drawShape(iShape shape) {
         if (canvas != null && shape != null) {
             shape.draw(canvas);
         }
     }
     
-    public void redrawAll(ArrayList<Shape> shapes) {
+    public void redrawAll(ArrayList<iShape> shapes) {
         if (canvas == null || graphicsContext == null) {
             return;
         }
         clearCanvas();
         if (shapes != null) {
-            for (Shape shape : shapes) {
+            for (iShape shape : shapes) {
                 if (shape != null) {
                     shape.draw(canvas);
                 }
@@ -82,7 +83,7 @@ public class CanvasManager {
         }
     }
     
-    public void refreshWithHistory(ArrayList<Shape> shapes, Stack<ArrayList<Shape>> historyStack) {
+    public void refreshWithHistory(ArrayList<iShape> shapes, Stack<ArrayList<iShape>> historyStack) {
         try {
             historyStack.push(new ArrayList<>(cloneList(shapes)));
         } catch (CloneNotSupportedException ex) {
@@ -91,10 +92,17 @@ public class CanvasManager {
         redrawAll(shapes);
     }
     
-    private ArrayList<Shape> cloneList(ArrayList<Shape> shapes) throws CloneNotSupportedException {
+   /* private ArrayList<Shape> cloneList(ArrayList<Shape> shapes) throws CloneNotSupportedException {
         ArrayList<Shape> clonedList = new ArrayList<>();
         for (Shape shape : shapes) {
             clonedList.add(shape.cloneShape());
+        }
+        return clonedList;
+    }*/
+    private ArrayList<iShape> cloneList(ArrayList<iShape> shapes) throws CloneNotSupportedException {
+        ArrayList<iShape> clonedList = new ArrayList<>();
+        for (iShape shape : shapes) {
+            clonedList.add(shape.clone());
         }
         return clonedList;
     }

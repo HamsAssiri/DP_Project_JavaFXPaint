@@ -7,7 +7,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 
 
-public class Triangle extends Shape{
+public class Triangle extends Shape implements iShape{
     private Point2D thirdPoint;
     
     public Triangle(Point2D startPos, Point2D endPos, Color strockColor) {
@@ -61,5 +61,14 @@ public class Triangle extends Shape{
         gc.fillPolygon(new double[]{x1,x2,x3}, new double[]{y1,y2,y3}, 3);
     }
     
+    @Override
+    public String getType() {
+        return "Triangle";
+    }
     
+    // Ensure clone returns IShape
+    @Override
+    public iShape clone() throws CloneNotSupportedException {
+        return (iShape) super.clone();
+    } 
 }

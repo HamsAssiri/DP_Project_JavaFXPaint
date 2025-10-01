@@ -7,7 +7,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 
 
-public class Ellipse extends Shape{
+public class Ellipse extends Shape implements iShape{
     private double hRadius;
     private double vRadius;
 
@@ -62,5 +62,15 @@ public class Ellipse extends Shape{
         gc.fillOval(super.getTopLeft().getX(), super.getTopLeft().getY(), hRadius*2, vRadius*2);
     }
     
+    @Override
+    public String getType() {
+        return "Ellipse";
+    }
+    
+    // Ensure clone returns IShape
+    @Override
+    public iShape clone() throws CloneNotSupportedException {
+        return (iShape) super.clone();
+    } 
     
 }

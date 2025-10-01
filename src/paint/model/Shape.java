@@ -6,17 +6,26 @@ import java.util.Map;
 import javafx.animation.Interpolatable;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.paint.Color;
 import javafx.scene.paint.*;
 
 
 public abstract class Shape implements iShape, java.lang.Cloneable{
     
-    private Point2D startPosition;
+    //limitation
+    /*private Point2D startPosition;
     private Point2D endPosition;
     private Point2D topLeft;
     private Color color;
     private Color fillColor;
-    private Map properties = new HashMap<String,Double>();
+    private Map properties = new HashMap<String,Double>();*/
+    
+    protected Point2D startPosition;
+    protected Point2D endPosition;
+    protected Point2D topLeft;
+    protected Color color;
+    protected Color fillColor;
+    protected Map<String, Double> properties = new HashMap<>();
     
     public Shape(){
         //Variables will be set by the Properties map.
@@ -146,17 +155,26 @@ public abstract class Shape implements iShape, java.lang.Cloneable{
         return this.fillColor;
     }
 
-    @Override
+   /* @Override
     public void draw(Canvas canvas) {
         
-    }
-    
+    }*/
+    @Override
+    public abstract void draw(Canvas canvas);
     
 
-    @Override
+    /*@Override
     public Shape clone() throws CloneNotSupportedException{
         return cloneShape();
-    }
+    }*/
+    /* @Override
+    public abstract iShape clone() throws CloneNotSupportedException;*/
+    @Override
+    public iShape clone() throws CloneNotSupportedException {
+    Shape cloned = (Shape) super.clone();
+    // Add deep copying for mutable fields if needed
+    return cloned;
+}
     
     public Shape cloneShape() throws CloneNotSupportedException {
         Shape temp = null;
@@ -177,6 +195,10 @@ public abstract class Shape implements iShape, java.lang.Cloneable{
     public void setTopLeft(Point2D pos){
         this.topLeft = pos;
     }
+    
+    //overriding the new methods 
+    @Override
+    public abstract String getType();
     
     
     
