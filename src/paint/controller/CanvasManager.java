@@ -92,13 +92,6 @@ public class CanvasManager {
         redrawAll(shapes);
     }
     
-   /* private ArrayList<Shape> cloneList(ArrayList<Shape> shapes) throws CloneNotSupportedException {
-        ArrayList<Shape> clonedList = new ArrayList<>();
-        for (Shape shape : shapes) {
-            clonedList.add(shape.cloneShape());
-        }
-        return clonedList;
-    }*/
     private ArrayList<iShape> cloneList(ArrayList<iShape> shapes) throws CloneNotSupportedException {
         ArrayList<iShape> clonedList = new ArrayList<>();
         for (iShape shape : shapes) {

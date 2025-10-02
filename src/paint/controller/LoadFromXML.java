@@ -48,7 +48,7 @@ public class LoadFromXML {
     }
     
     private void copyMapToList(String type){
-        iShape temp = new ShapeFactory().createShape(type, m);
+        iShape temp = ShapeFactory.getInstance().createShape(type, m);
         myList.add(temp);
         
     }

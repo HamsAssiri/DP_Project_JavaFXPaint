@@ -5,7 +5,7 @@ import javafx.geometry.Point2D;
 import javafx.scene.paint.Color;
 
 
-public class Circle extends Ellipse implements iShape{
+public class Circle extends Ellipse{
     
     public Circle(Point2D startPos, Point2D endPos, Color strockColor) {
         super(startPos, endPos, strockColor);
@@ -26,12 +26,9 @@ public class Circle extends Ellipse implements iShape{
         return "Circle";
     }
     
-    // Ensure clone returns IShape
     @Override
     public iShape clone() throws CloneNotSupportedException {
         return (iShape) super.clone();
-    } 
-    
-    
+    }  
     
 }

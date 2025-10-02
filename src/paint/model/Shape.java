@@ -12,14 +12,6 @@ import javafx.scene.paint.*;
 
 public abstract class Shape implements iShape, java.lang.Cloneable{
     
-    //limitation
-    /*private Point2D startPosition;
-    private Point2D endPosition;
-    private Point2D topLeft;
-    private Color color;
-    private Color fillColor;
-    private Map properties = new HashMap<String,Double>();*/
-    
     protected Point2D startPosition;
     protected Point2D endPosition;
     protected Point2D topLeft;
@@ -28,7 +20,7 @@ public abstract class Shape implements iShape, java.lang.Cloneable{
     protected Map<String, Double> properties = new HashMap<>();
     
     public Shape(){
-        //Variables will be set by the Properties map.
+       
     }
     
     public Shape(Point2D startPos, Point2D endPos , Color strockColor){
@@ -39,12 +31,6 @@ public abstract class Shape implements iShape, java.lang.Cloneable{
         this.topLeft = calculateTopLeft();
     }
     
-    /*public Shape(Point2D startPos, Point2D endPos, Color strockColor, Color fillColor){
-        this.color = strockColor;
-        this.startPosition = startPos;
-        this.endPosition = endPos;
-        this.fillColor = fillColor;
-    }*/
     
     @Override
     public void setPosition(Point2D position) {
@@ -155,20 +141,9 @@ public abstract class Shape implements iShape, java.lang.Cloneable{
         return this.fillColor;
     }
 
-   /* @Override
-    public void draw(Canvas canvas) {
-        
-    }*/
     @Override
     public abstract void draw(Canvas canvas);
-    
 
-    /*@Override
-    public Shape clone() throws CloneNotSupportedException{
-        return cloneShape();
-    }*/
-    /* @Override
-    public abstract iShape clone() throws CloneNotSupportedException;*/
     @Override
     public iShape clone() throws CloneNotSupportedException {
     Shape cloned = (Shape) super.clone();

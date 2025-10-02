@@ -7,7 +7,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 
 
-public class Rectangle extends Shape implements iShape{
+public class Rectangle extends Shape {
     private double width;
     private double height;
 

@@ -7,7 +7,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 
 
-public class Line extends Shape implements iShape{
+public class Line extends Shape{
     
     private double length;
     

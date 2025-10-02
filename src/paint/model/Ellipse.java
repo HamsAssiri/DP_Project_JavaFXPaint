@@ -7,7 +7,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 
 
-public class Ellipse extends Shape implements iShape{
+public class Ellipse extends Shape{
     private double hRadius;
     private double vRadius;
 

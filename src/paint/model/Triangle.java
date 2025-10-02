@@ -7,7 +7,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 
 
-public class Triangle extends Shape implements iShape{
+public class Triangle extends Shape{
     private Point2D thirdPoint;
     
     public Triangle(Point2D startPos, Point2D endPos, Color strockColor) {
