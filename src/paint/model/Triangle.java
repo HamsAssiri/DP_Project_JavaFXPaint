@@ -45,6 +45,10 @@ public class Triangle extends Shape{
         super.setPropertiesToVariables();
         thirdPoint = new Point2D(super.getFromMap("thirdPointX"),super.getFromMap("thirdPointY"));
     }
+
+    public Point2D getThirdPoint() {
+        return thirdPoint;
+    }
     
     @Override
     public void draw(Canvas canvas){

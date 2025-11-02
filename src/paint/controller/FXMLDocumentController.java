@@ -72,6 +72,7 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
     private Canvas CanvasBox;
     @FXML
     private Button CopyBtn;
+    
     @FXML
     private Label Message;
     @FXML
@@ -164,6 +165,8 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
             if(secondary.empty()){Message.setText("There is no more history for me to get .. Go search history books.");return;}
             redo();
         }
+
+        
         
         if(event.getSource()==SaveBtn){
             showPathPane();
@@ -197,6 +200,30 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
     public void hidePathPane(){
         PathPane.setVisible(false);
         Message.setVisible(true);
+    }
+
+    //decorator
+    @FXML
+    private void handleShadowMenu(ActionEvent event) {
+        if (!ShapeList.getSelectionModel().isEmpty()) {
+            int index = ShapeList.getSelectionModel().getSelectedIndex();
+            iShape s = shapeList.get(index);
+            boolean has = false;
+            iShape cur = s;
+            while (cur instanceof ShapeDecorator) {
+                if (cur instanceof ShadowDecorator) { has = true; break; }
+                cur = ((ShapeDecorator) cur).getDecoratedShape();
+            }
+            if (!has) {
+                shapeList.set(index, new ShadowDecorator(s));
+            } else {
+                shapeList.set(index, ShapeDecorator.removeDecoratorOfClass(s, ShadowDecorator.class));
+            }
+            canvasManager.refreshWithHistory(shapeList, primary);
+            ShapeList.setItems(getStringList());
+        } else {
+            Message.setText("You need to pick a shape first to toggle shadow.");
+        }
     }
     
     public void startDrag(MouseEvent event){
