@@ -79,6 +79,7 @@
                   <MenuButton fx:id="DecorationBtn" HBox.hgrow="ALWAYS" contentDisplay="CENTER" maxHeight="50.0" maxWidth="Infinity" minHeight="50.0" minWidth="80.0" prefHeight="50.0" prefWidth="120.0" style="-fx-background-radius: 0px; -fx-background-color: #d6f0ff;" text="Decorations">
                      <items>
                         <MenuItem fx:id="ShadowMenuItem" mnemonicParsing="false" onAction="#handleShadowMenu" text="Shadow" />
+                        <MenuItem fx:id="BorderMenuItem" mnemonicParsing="false" onAction="#handleBorderMenu" text="Border" />
                      </items>
                      <cursor>
                         <Cursor fx:constant="HAND" />
