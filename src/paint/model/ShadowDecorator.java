@@ -33,8 +33,10 @@ public class ShadowDecorator extends ShapeDecorator {
         gc.setLineCap(StrokeLineCap.ROUND);
         gc.setGlobalBlendMode(BlendMode.SRC_OVER);
 
-    Point2D tl = decoratedShape.getTopLeft();
-    Point2D end = decoratedShape.getEndPosition();
+        // Use the innermost wrapped shape so instanceof checks match the concrete shape
+        iShape core = ShapeDecorator.unwrapAll(decoratedShape);
+        Point2D tl = core.getTopLeft();
+        Point2D end = core.getEndPosition();
         double bx = Math.min(tl.getX(), end.getX());
         double by = Math.min(tl.getY(), end.getY());
         double bw = Math.abs(end.getX() - tl.getX());
@@ -49,24 +51,24 @@ public class ShadowDecorator extends ShapeDecorator {
             gc.setFill(c);
             gc.setStroke(c);
 
-            if (decoratedShape instanceof Circle || decoratedShape instanceof Ellipse) {
-                Ellipse e = (Ellipse) decoratedShape;
+            if (core instanceof Circle || core instanceof Ellipse) {
+                Ellipse e = (Ellipse) core;
                 double oxp = e.getTopLeft().getX();
                 double oyp = e.getTopLeft().getY();
                 double ow = e.gethRadius() * 2;
                 double oh = e.getvRadius() * 2;
                 gc.fillOval(oxp + ox - padding, oyp + oy - padding, ow + padding * 2, oh + padding * 2);
 
-            } else if (decoratedShape instanceof Rectangle || decoratedShape instanceof Square) {
-                Rectangle r = (Rectangle) decoratedShape;
+            } else if (core instanceof Rectangle || core instanceof Square) {
+                Rectangle r = (Rectangle) core;
                 double oxp = r.getTopLeft().getX();
                 double oyp = r.getTopLeft().getY();
                 double ow = r.getWidth();
                 double oh = r.getHeight();
                 gc.fillRect(oxp + ox - padding, oyp + oy - padding, ow + padding * 2, oh + padding * 2);
 
-            } else if (decoratedShape instanceof Line) {
-                Line l = (Line) decoratedShape;
+            } else if (core instanceof Line) {
+                Line l = (Line) core;
                 double x1 = l.getPosition().getX() + ox;
                 double y1 = l.getPosition().getY() + oy;
                 double x2 = l.getEndPosition().getX() + ox;
@@ -74,8 +76,8 @@ public class ShadowDecorator extends ShapeDecorator {
                 gc.setLineWidth(4.0 * t + 1.0);
                 gc.strokeLine(x1, y1, x2, y2);
 
-            } else if (decoratedShape instanceof Triangle) {
-                Triangle tri = (Triangle) decoratedShape;
+            } else if (core instanceof Triangle) {
+                Triangle tri = (Triangle) core;
                 double x1 = tri.getPosition().getX() + ox;
                 double y1 = tri.getPosition().getY() + oy;
                 double x2 = tri.getEndPosition().getX() + ox;

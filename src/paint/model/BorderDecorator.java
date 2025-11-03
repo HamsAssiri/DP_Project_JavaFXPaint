@@ -42,31 +42,33 @@ public class BorderDecorator extends ShapeDecorator {
 
         gc.setLineWidth(borderWidth);
 
-        Point2D tl = decoratedShape.getTopLeft();
-        Point2D end = decoratedShape.getEndPosition();
+    // Use the innermost wrapped shape so instanceof checks match the concrete shape
+    iShape core = ShapeDecorator.unwrapAll(decoratedShape);
+    Point2D tl = core.getTopLeft();
+    Point2D end = core.getEndPosition();
         double bx = Math.min(tl.getX(), end.getX());
         double by = Math.min(tl.getY(), end.getY());
         double bw = Math.abs(end.getX() - tl.getX());
         double bh = Math.abs(end.getY() - tl.getY());
 
-        if (decoratedShape instanceof Circle || decoratedShape instanceof Ellipse) {
-            Ellipse e = (Ellipse) decoratedShape;
+        if (core instanceof Circle || core instanceof Ellipse) {
+            Ellipse e = (Ellipse) core;
             double oxp = e.getTopLeft().getX();
             double oyp = e.getTopLeft().getY();
             double ow = e.gethRadius() * 2;
             double oh = e.getvRadius() * 2;
             gc.strokeOval(oxp, oyp, ow, oh);
 
-        } else if (decoratedShape instanceof Rectangle || decoratedShape instanceof Square) {
-            Rectangle r = (Rectangle) decoratedShape;
+        } else if (core instanceof Rectangle || core instanceof Square) {
+            Rectangle r = (Rectangle) core;
             double oxp = r.getTopLeft().getX();
             double oyp = r.getTopLeft().getY();
             double ow = r.getWidth();
             double oh = r.getHeight();
             gc.strokeRect(oxp, oyp, ow, oh);
 
-        } else if (decoratedShape instanceof Line) {
-            Line l = (Line) decoratedShape;
+        } else if (core instanceof Line) {
+            Line l = (Line) core;
             gc.strokeLine(
                     l.getPosition().getX(),
                     l.getPosition().getY(),
@@ -74,8 +76,8 @@ public class BorderDecorator extends ShapeDecorator {
                     l.getEndPosition().getY()
             );
 
-        } else if (decoratedShape instanceof Triangle) {
-            Triangle tri = (Triangle) decoratedShape;
+        } else if (core instanceof Triangle) {
+            Triangle tri = (Triangle) core;
             try {
                 Point2D third = tri.getThirdPoint();
                 gc.strokePolygon(
