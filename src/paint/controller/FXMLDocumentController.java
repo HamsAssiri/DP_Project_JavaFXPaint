@@ -1,4 +1,3 @@
-
 package paint.controller;
 
 import java.io.IOException;
@@ -32,8 +31,10 @@ import paint.model.*;
 import paint.model.iShape;
 
 public class FXMLDocumentController implements Initializable, DrawingEngine {
-  
-    /***FXML VARIABLES***/
+
+    /**
+     * *FXML VARIABLES**
+     */
     @FXML
     private Button DeleteBtn;
     @FXML
@@ -72,132 +73,148 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
     private Canvas CanvasBox;
     @FXML
     private Button CopyBtn;
-    
+
     @FXML
     private Label Message;
     @FXML
     private ListView<String> ShapeList; // Added generic type
-    
-    /***CLASS VARIABLES***/
+
+    /**
+     * *CLASS VARIABLES**
+     */
     private Point2D start;
     private Point2D end;
-    
+
     //SINGLETON DP - Canvas Manager
     private CanvasManager canvasManager;
-    
+
     //Shape list management - Use iShape consistently
     private ArrayList<iShape> shapeList = new ArrayList<>();
     private IShapeFactory shapeFactory;
-    
-    private boolean move=false;
-    private boolean copy=false;
-    private boolean resize=false;
-    private boolean save=false;
-    private boolean load=false;
-    private boolean importt =false;
-    
+
+    private boolean move = false;
+    private boolean copy = false;
+    private boolean resize = false;
+    private boolean save = false;
+    private boolean load = false;
+    private boolean importt = false;
+
     //MEMENTO DP - Fix the stack types to use iShape
     private Stack<ArrayList<iShape>> primary = new Stack<>();
     private Stack<ArrayList<iShape>> secondary = new Stack<>();
 
     @FXML
     private void handleButtonAction(ActionEvent event) {
-        if(event.getSource() == StartBtn){
+        if (event.getSource() == StartBtn) {
             Before.setVisible(false);
             After.setVisible(true);
         }
-        
+
         Message.setText("");
-        if(event.getSource()==DeleteBtn){
-            if(!ShapeList.getSelectionModel().isEmpty()){
+        if (event.getSource() == DeleteBtn) {
+            if (!ShapeList.getSelectionModel().isEmpty()) {
                 int index = ShapeList.getSelectionModel().getSelectedIndex();
                 removeShape(shapeList.get(index));
-            }else{
+            } else {
                 Message.setText("You need to pick a shape first to delete it.");
             }
         }
-        
-        if(event.getSource()==RecolorBtn){
-            if(!ShapeList.getSelectionModel().isEmpty()){
+
+        if (event.getSource() == RecolorBtn) {
+            if (!ShapeList.getSelectionModel().isEmpty()) {
                 int index = ShapeList.getSelectionModel().getSelectedIndex();
                 shapeList.get(index).setFillColor(ColorBox.getValue());
                 // Use CanvasManager singleton for refresh operations
                 canvasManager.refreshWithHistory(shapeList, primary);
                 ShapeList.setItems(getStringList());
-            }else{
+            } else {
                 Message.setText("You need to pick a shape first to recolor it.");
             }
         }
-        
-        if(event.getSource()==MoveBtn){
-            if(!ShapeList.getSelectionModel().isEmpty()){
-                move=true;
+
+        if (event.getSource() == MoveBtn) {
+            if (!ShapeList.getSelectionModel().isEmpty()) {
+                move = true;
                 Message.setText("Click on the new top-left position below to move the selected shape.");
-            }else{
+            } else {
                 Message.setText("You need to pick a shape first to move it.");
             }
         }
-        
-        if(event.getSource()==CopyBtn){
-            if(!ShapeList.getSelectionModel().isEmpty()){
-                copy=true;
+
+        if (event.getSource() == CopyBtn) {
+            if (!ShapeList.getSelectionModel().isEmpty()) {
+                copy = true;
                 Message.setText("Click on the new top-left position below to copy the selected shape.");
-            }else{
+            } else {
                 Message.setText("You need to pick a shape first to copy it.");
             }
         }
-        
-        if(event.getSource()==ResizeBtn){
-            if(!ShapeList.getSelectionModel().isEmpty()){
-                resize=true;
+
+        if (event.getSource() == ResizeBtn) {
+            if (!ShapeList.getSelectionModel().isEmpty()) {
+                resize = true;
                 Message.setText("Click on the new right-button position below to resize the selected shape.");
-            }else{
+            } else {
                 Message.setText("You need to pick a shape first to resize it.");
             }
         }
-        
-        if(event.getSource()==UndoBtn){
-            if(primary.empty()){Message.setText("We are back to zero point! .. Can Undo nothing more!");return;}
+
+        if (event.getSource() == UndoBtn) {
+            if (primary.empty()) {
+                Message.setText("We are back to zero point! .. Can Undo nothing more!");
+                return;
+            }
             undo();
         }
-        
-        if(event.getSource()==RedoBtn){
-            if(secondary.empty()){Message.setText("There is no more history for me to get .. Go search history books.");return;}
+
+        if (event.getSource() == RedoBtn) {
+            if (secondary.empty()) {
+                Message.setText("There is no more history for me to get .. Go search history books.");
+                return;
+            }
             redo();
         }
 
-        
-        
-        if(event.getSource()==SaveBtn){
+        if (event.getSource() == SaveBtn) {
             showPathPane();
-            save=true;
+            save = true;
         }
-        
-        if(event.getSource()==LoadBtn){
+
+        if (event.getSource() == LoadBtn) {
             showPathPane();
-            load=true;
+            load = true;
         }
-        
-        if(event.getSource()==ImportBtn){
+
+        if (event.getSource() == ImportBtn) {
             showPathPane();
-            importt=true;
+            importt = true;
         }
-        
-        if(event.getSource()==PathBtn){
-            if(PathText.getText().isEmpty()){PathText.setText("You need to set the path of the file.");return;}
-            if(save){save=false;save(PathText.getText());}
-            else if(load){load=false;load(PathText.getText());}
-            else if(importt){importt=false;installPluginShape(PathText.getText());}
+
+        if (event.getSource() == PathBtn) {
+            if (PathText.getText().isEmpty()) {
+                PathText.setText("You need to set the path of the file.");
+                return;
+            }
+            if (save) {
+                save = false;
+                save(PathText.getText());
+            } else if (load) {
+                load = false;
+                load(PathText.getText());
+            } else if (importt) {
+                importt = false;
+                installPluginShape(PathText.getText());
+            }
             hidePathPane();
         }
     }
-    
-    public void showPathPane(){
+
+    public void showPathPane() {
         Message.setVisible(false);
         PathPane.setVisible(true);
     }
-    
-    public void hidePathPane(){
+
+    public void hidePathPane() {
         PathPane.setVisible(false);
         Message.setVisible(true);
     }
@@ -211,7 +228,10 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
             boolean has = false;
             iShape cur = s;
             while (cur instanceof ShapeDecorator) {
-                if (cur instanceof ShadowDecorator) { has = true; break; }
+                if (cur instanceof ShadowDecorator) {
+                    has = true;
+                    break;
+                }
                 cur = ((ShapeDecorator) cur).getDecoratedShape();
             }
             if (!has) {
@@ -225,53 +245,90 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
             Message.setText("You need to pick a shape first to toggle shadow.");
         }
     }
-    
-    public void startDrag(MouseEvent event){
-        start = new Point2D(event.getX(),event.getY());
+    //decorator
+    @FXML
+    private void handleBorderMenu(ActionEvent event) {
+        if (!ShapeList.getSelectionModel().isEmpty()) {
+            int index = ShapeList.getSelectionModel().getSelectedIndex();
+            iShape s = shapeList.get(index);
+            boolean has = false;
+            iShape cur = s;
+            while (cur instanceof ShapeDecorator) {
+                if (cur instanceof BorderDecorator) {
+                    has = true;
+                    break;
+                }
+                cur = ((ShapeDecorator) cur).getDecoratedShape();
+            }
+            if (!has) {
+                shapeList.set(index, new BorderDecorator(s, Color.BLACK, 3.0));
+            } else {
+                shapeList.set(index, ShapeDecorator.removeDecoratorOfClass(s, BorderDecorator.class));
+            }
+            canvasManager.refreshWithHistory(shapeList, primary);
+            ShapeList.setItems(getStringList());
+        } else {
+            Message.setText("You need to pick a shape first to toggle border.");
+        }
+    }
+
+    public void startDrag(MouseEvent event) {
+        start = new Point2D(event.getX(), event.getY());
         Message.setText("");
     }
-    
-    public void endDrag(MouseEvent event) throws CloneNotSupportedException{
+
+    public void endDrag(MouseEvent event) throws CloneNotSupportedException {
         end = new Point2D(event.getX(), event.getY());
-        if(end.equals(start)){clickFunction();}else{dragFunction();}
+        if (end.equals(start)) {
+            clickFunction();
+        } else {
+            dragFunction();
+        }
     }
-    
-    public void clickFunction() throws CloneNotSupportedException{
-        if(move){move=false;moveFunction();}
-        else if(copy){copy=false;copyFunction();}
-        else if(resize){resize=false;resizeFunction();}
+
+    public void clickFunction() throws CloneNotSupportedException {
+        if (move) {
+            move = false;
+            moveFunction();
+        } else if (copy) {
+            copy = false;
+            copyFunction();
+        } else if (resize) {
+            resize = false;
+            resizeFunction();
+        }
     }
-    
-    public void moveFunction(){
+
+    public void moveFunction() {
         int index = ShapeList.getSelectionModel().getSelectedIndex();
         shapeList.get(index).setTopLeft(start);
         // Use CanvasManager singleton for refresh operations
         canvasManager.refreshWithHistory(shapeList, primary);
         ShapeList.setItems(getStringList());
     }
-    
-    public void copyFunction() throws CloneNotSupportedException{
+
+    public void copyFunction() throws CloneNotSupportedException {
         int index = ShapeList.getSelectionModel().getSelectedIndex();
         iShape temp = shapeList.get(index).clone(); // Use clone() instead of cloneShape()
-        if(temp == null){
+        if (temp == null) {
             System.out.println("Error cloning failed!");
         } else {
             shapeList.add(temp);
-            shapeList.get(shapeList.size()-1).setTopLeft(start);
+            shapeList.get(shapeList.size() - 1).setTopLeft(start);
             // Use CanvasManager singleton for refresh operations
             canvasManager.refreshWithHistory(shapeList, primary);
             ShapeList.setItems(getStringList());
         }
     }
-    
-    public void resizeFunction(){
+
+    public void resizeFunction() {
         int index = ShapeList.getSelectionModel().getSelectedIndex();
         Color c = shapeList.get(index).getFillColor();
         start = shapeList.get(index).getTopLeft();
-        
+
         //Factory DP - Use the factory instance and iShape
         iShape temp = shapeFactory.createShape(shapeList.get(index).getClass().getSimpleName(), start, end, ColorBox.getValue());
-        if(temp.getType().equals("Line")){
+        if (temp.getType().equals("Line")) {
             Message.setText("Line doesn't support this command. Sorry :(");
             return;
         }
@@ -282,11 +339,11 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
         canvasManager.refreshWithHistory(shapeList, primary);
         ShapeList.setItems(getStringList());
     }
-    
-    public void dragFunction(){
+
+    public void dragFunction() {
         String type = ShapeBox.getValue();
         iShape sh;
-         
+
         // Use factory interface
         try {
             sh = shapeFactory.createShape(type, start, end, ColorBox.getValue());
@@ -294,39 +351,39 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
             Message.setText("Don't be in a hurry! Choose a shape first :D");
             return;
         }
-        
+
         addShape(sh);
         canvasManager.drawShape(sh);
     }
-    
+
     //Observer DP
-    public ObservableList<String> getStringList(){
+    public ObservableList<String> getStringList() {
         ObservableList<String> l = FXCollections.observableArrayList();
         try {
-            for(int i=0; i<shapeList.size(); i++){
-                String temp = shapeList.get(i).getType() + "  (" + 
-                    (int) shapeList.get(i).getTopLeft().getX() + "," + 
-                    (int) shapeList.get(i).getTopLeft().getY() + ")";
+            for (int i = 0; i < shapeList.size(); i++) {
+                String temp = shapeList.get(i).getType() + "  ("
+                        + (int) shapeList.get(i).getTopLeft().getX() + ","
+                        + (int) shapeList.get(i).getTopLeft().getY() + ")";
                 l.add(temp);
             }
-        } catch(Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return l;
     }
-      
+
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         // Use factory interface
         shapeFactory = ShapeFactory.getInstance();
-        
+
         // Get available shapes from factory
-        ObservableList<String> availableShapes = 
-            FXCollections.observableArrayList(shapeFactory.getAvailableShapes());
+        ObservableList<String> availableShapes
+                = FXCollections.observableArrayList(shapeFactory.getAvailableShapes());
         ShapeBox.setItems(availableShapes);
-        
+
         ColorBox.setValue(Color.BLACK);
-        
+
         canvasManager = CanvasManager.getInstance();
         canvasManager.initializeCanvas(CanvasBox);
     }
@@ -336,8 +393,8 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
         canvasManager.refreshWithHistory(shapeList, primary);
         ShapeList.setItems(getStringList());
     }
-    
-    public void redraw(Canvas canvas){
+
+    public void redraw(Canvas canvas) {
         canvasManager.redrawAll(shapeList);
     }
 
@@ -370,17 +427,17 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
 
     @Override
     public void undo() {
-        if(secondary.size() < 21){
+        if (secondary.size() < 21) {
             ArrayList<iShape> temp = primary.pop();
             secondary.push(temp);
-            
-            if(primary.empty()){
+
+            if (primary.empty()) {
                 shapeList = new ArrayList<>();
             } else {
-                temp = primary.peek(); 
+                temp = primary.peek();
                 shapeList = new ArrayList<>(temp); // Create a new list to avoid reference issues
             }
-            
+
             canvasManager.redrawAll(shapeList);
             ShapeList.setItems(getStringList());
         } else {
@@ -392,23 +449,23 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
     public void redo() {
         ArrayList<iShape> temp = secondary.pop();
         primary.push(new ArrayList<>(temp)); // Create a copy
-        
+
         shapeList = new ArrayList<>(temp); // Create a new list
-        
+
         canvasManager.redrawAll(shapeList);
         ShapeList.setItems(getStringList());
     }
 
     @Override
     public void save(String path) {
-        if(path.substring(path.length()-4).equals(".xml")){
+        if (path.substring(path.length() - 4).equals(".xml")) {
             SaveToXML x = new SaveToXML(path, shapeList);
-            if(x.checkSuccess()){
+            if (x.checkSuccess()) {
                 Message.setText("File Saved Successfully");
             } else {
                 Message.setText("Error happened while saving, please check the path and try again!");
             }
-        } else if(path.substring(path.length()-5).equals(".json")){
+        } else if (path.substring(path.length() - 5).equals(".json")) {
             Message.setText("Sorry, Json is not supported :(");
         } else {
             Message.setText("Wrong file format .. save to either .xml or .json");
@@ -417,10 +474,10 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
 
     @Override
     public void load(String path) {
-        if(path.substring(path.length()-4).equals(".xml")){
+        if (path.substring(path.length() - 4).equals(".xml")) {
             try {
                 LoadFromXML l = new LoadFromXML(path);
-                if(l.checkSuccess()){
+                if (l.checkSuccess()) {
                     shapeList = l.getList();
                     canvasManager.refreshWithHistory(shapeList, primary);
                     ShapeList.setItems(getStringList());
@@ -432,7 +489,7 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
                 Logger.getLogger(FXMLDocumentController.class.getName()).log(Level.SEVERE, null, ex);
                 Message.setText("Error loading file: " + ex.getMessage());
             }
-        } else if(path.substring(path.length()-5).equals(".json")){
+        } else if (path.substring(path.length() - 5).equals(".json")) {
             Message.setText("Sorry, Json is not supported :(");
         } else {
             Message.setText("Wrong file format .. load from either .xml or .json");
