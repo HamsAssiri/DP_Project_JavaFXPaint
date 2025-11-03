@@ -29,6 +29,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.xml.sax.SAXException;
 import paint.model.*;
 import paint.model.iShape;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 
 public class FXMLDocumentController implements Initializable, DrawingEngine {
 
@@ -327,7 +329,72 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
         start = shapeList.get(index).getTopLeft();
 
         //Factory DP - Use the factory instance and iShape
-        iShape temp = shapeFactory.createShape(shapeList.get(index).getClass().getSimpleName(), start, end, ColorBox.getValue());
+        iShape selected = shapeList.get(index);
+        java.util.List<ShapeDecorator> decorators = new java.util.ArrayList<>();
+        iShape cur = selected;
+        while (cur instanceof ShapeDecorator) {
+            decorators.add((ShapeDecorator) cur);
+            cur = ((ShapeDecorator) cur).getDecoratedShape();
+        }
+        iShape core = cur;
+        String type = core.getType();
+        iShape newCore = shapeFactory.createShape(type, start, end, ColorBox.getValue());
+
+        iShape wrapped = newCore;
+        for (int i = decorators.size() - 1; i >= 0; --i) {
+            ShapeDecorator d = decorators.get(i);
+            try {
+                if (d instanceof BorderDecorator) {
+                    try {
+                        Field fColor = BorderDecorator.class.getDeclaredField("borderColor");
+                        Field fWidth = BorderDecorator.class.getDeclaredField("borderWidth");
+                        fColor.setAccessible(true);
+                        fWidth.setAccessible(true);
+                        Color bc = (Color) fColor.get(d);
+                        double bw = fWidth.getDouble(d);
+                        wrapped = new BorderDecorator(wrapped, bc, bw);
+                        continue;
+                    } catch (Exception ex) {
+                        // fallback to default BorderDecorator
+                        wrapped = new BorderDecorator(wrapped);
+                        continue;
+                    }
+                } else if (d instanceof ShadowDecorator) {
+                    try {
+                        Field fColor = ShadowDecorator.class.getDeclaredField("color");
+                        Field fLayers = ShadowDecorator.class.getDeclaredField("layers");
+                        Field fOffsetX = ShadowDecorator.class.getDeclaredField("offsetX");
+                        Field fOffsetY = ShadowDecorator.class.getDeclaredField("offsetY");
+                        Field fPadding = ShadowDecorator.class.getDeclaredField("padding");
+                        fColor.setAccessible(true);
+                        fLayers.setAccessible(true);
+                        fOffsetX.setAccessible(true);
+                        fOffsetY.setAccessible(true);
+                        fPadding.setAccessible(true);
+                        Color sc = (Color) fColor.get(d);
+                        int layers = fLayers.getInt(d);
+                        double ox = fOffsetX.getDouble(d);
+                        double oy = fOffsetY.getDouble(d);
+                        double pad = fPadding.getDouble(d);
+                        ShadowDecorator sd = new ShadowDecorator(wrapped, sc, layers, ox, oy);
+                        sd.setPadding(pad);
+                        wrapped = sd;
+                        continue;
+                    } catch (Exception ex) {
+                        wrapped = new ShadowDecorator(wrapped);
+                        continue;
+                    }
+                }
+                try {
+                    Constructor<? extends ShapeDecorator> cons = d.getClass().getDeclaredConstructor(iShape.class);
+                    cons.setAccessible(true);
+                    wrapped = cons.newInstance(wrapped);
+                } catch (Exception ex) {
+                }
+            } catch (Exception ex) {
+            }
+        }
+        iShape temp = wrapped;
         if (temp.getType().equals("Line")) {
             Message.setText("Line doesn't support this command. Sorry :(");
             return;
