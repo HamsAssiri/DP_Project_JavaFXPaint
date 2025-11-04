@@ -85,6 +85,20 @@
                         <Cursor fx:constant="HAND" />
                      </cursor>
                   </MenuButton>
+                  
+                     <!-- Composit buttons-->
+                    <Button fx:id="GroupBtn" contentDisplay="CENTER" maxHeight="50.0" maxWidth="166.67" minHeight="50.0" minWidth="166.67" mnemonicParsing="false" onAction="#handleButtonAction" prefHeight="50.0" prefWidth="166.67" style="-fx-background-radius: 0px; -fx-background-color: #a8d8ea;" styleClass="btns" text="Group">
+                       <cursor>
+                        <Cursor fx:constant="HAND" />
+                       </cursor>
+                    </Button>
+                    
+                    <Button fx:id="UngroupBtn" contentDisplay="CENTER" maxHeight="50.0" maxWidth="166.67" minHeight="50.0" minWidth="166.67" mnemonicParsing="false" onAction="#handleButtonAction" prefHeight="50.0" prefWidth="166.67" style="-fx-background-radius: 0px; -fx-background-color: #aa96da;" styleClass="btns" text="Ungroup">
+                     <cursor>
+                      <Cursor fx:constant="HAND" />
+                     </cursor>
+                    </Button>
+                    
                </children>
             </HBox>
             <HBox alignment="CENTER" maxHeight="50.0" maxWidth="1000.0" minHeight="50.0" minWidth="1000.0" prefHeight="50.0" prefWidth="1000.0" GridPane.rowIndex="2">

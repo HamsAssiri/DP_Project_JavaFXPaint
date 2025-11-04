@@ -31,6 +31,8 @@ import paint.model.*;
 import paint.model.iShape;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import javafx.scene.control.SelectionMode; // For composite
+
 
 public class FXMLDocumentController implements Initializable, DrawingEngine {
 
@@ -75,6 +77,12 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
     private Canvas CanvasBox;
     @FXML
     private Button CopyBtn;
+    
+    // Composite Buttons
+    @FXML 
+    private Button GroupBtn;
+    @FXML 
+    private Button UngroupBtn;
 
     @FXML
     private Label Message;
@@ -209,6 +217,27 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
             }
             hidePathPane();
         }
+        
+        // COMPOSITE GROUP FUNCTIONALITY
+        if (event.getSource() == GroupBtn) {
+            if (ShapeList.getSelectionModel().getSelectedItems().size() > 1) {
+                createGroup();
+            } else {
+                Message.setText("Select multiple shapes to group");
+            }
+        }
+
+        if (event.getSource() == UngroupBtn) {
+            if (!ShapeList.getSelectionModel().isEmpty()) {
+                int index = ShapeList.getSelectionModel().getSelectedIndex();
+                if (shapeList.get(index) instanceof ShapeGroup) {
+                    ungroupShape(index);
+                } else {
+                    Message.setText("Select a group to ungroup");
+                }
+            }
+        }
+        // END COMPOSITE
     }
 
     public void showPathPane() {
@@ -220,6 +249,46 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
         PathPane.setVisible(false);
         Message.setVisible(true);
     }
+    
+    // COMPOSITE METHODS
+    private void createGroup() {
+        List<iShape> selectedShapes = new ArrayList<>();
+        List<Integer> indices = new ArrayList<>(
+        ShapeList.getSelectionModel().getSelectedIndices()
+        );
+    
+    // Sort indices in descending order to avoid index shifting during removal
+    indices.sort((a, b) -> b.compareTo(a));
+    
+    for (int index : indices) {
+        selectedShapes.add(shapeList.get(index));
+    }
+    
+    // Remove individual shapes and add group
+    for (int index : indices) {
+        shapeList.remove(index); // FIXED: Just use the primitive int directly
+    }
+    
+    ShapeGroup group = new ShapeGroup(selectedShapes);
+    shapeList.add(group);
+    
+    canvasManager.refreshWithHistory(shapeList, primary);
+    ShapeList.setItems(getStringList());
+    Message.setText("Shapes grouped successfully");
+}
+
+    private void ungroupShape(int groupIndex) {
+        ShapeGroup group = (ShapeGroup) shapeList.get(groupIndex);
+        List<iShape> individualShapes = group.getShapes();
+        
+        shapeList.remove(groupIndex);
+        shapeList.addAll(individualShapes);
+        
+        canvasManager.refreshWithHistory(shapeList, primary);
+        ShapeList.setItems(getStringList());
+        Message.setText("Group ungrouped successfully");
+    }
+
 
     //decorator
     @FXML
@@ -424,14 +493,22 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
     }
 
     //Observer DP
-    public ObservableList<String> getStringList() {
+    // COMPOSITE UPDATE -  getStringList to handle groups
+      public ObservableList<String> getStringList() {
         ObservableList<String> l = FXCollections.observableArrayList();
         try {
             for (int i = 0; i < shapeList.size(); i++) {
-                String temp = shapeList.get(i).getType() + "  ("
-                        + (int) shapeList.get(i).getTopLeft().getX() + ","
-                        + (int) shapeList.get(i).getTopLeft().getY() + ")";
-                l.add(temp);
+                iShape shape = shapeList.get(i);
+                String type = shape.getType();
+                Point2D topLeft = shape.getTopLeft();
+                
+                if (shape instanceof ShapeGroup) {
+                    ShapeGroup group = (ShapeGroup) shape;
+                    l.add("Group (" + group.getShapes().size() + " shapes) at (" + 
+                         (int)topLeft.getX() + "," + (int)topLeft.getY() + ")");
+                } else {
+                    l.add(type + "  (" + (int)topLeft.getX() + "," + (int)topLeft.getY() + ")");
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -441,6 +518,9 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        
+         // Enable multiple selection for ListView
+        ShapeList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         // Use factory interface
         shapeFactory = ShapeFactory.getInstance();
 
@@ -572,5 +652,5 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
     @Override
     public void installPluginShape(String jarPath) {
         Message.setText("Not supported yet.");
-    }
+    }   
 }
