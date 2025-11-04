@@ -23,12 +23,13 @@ import javafx.scene.canvas.*;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.*;
 import javax.xml.parsers.ParserConfigurationException;
 import org.xml.sax.SAXException;
 import paint.model.*;
-import paint.model.iShape;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import javafx.scene.control.SelectionMode; // For composite
@@ -79,10 +80,13 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
     private Button CopyBtn;
     
     // Composite Buttons
-    @FXML 
-    private Button GroupBtn;
-    @FXML 
-    private Button UngroupBtn;
+    
+    //private Button GroupBtn;
+    
+    //private Button UngroupBtn;
+
+    @FXML
+     private ToggleButton GroupToggle;
 
     @FXML
     private Label Message;
@@ -218,7 +222,7 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
             hidePathPane();
         }
         
-        // COMPOSITE GROUP FUNCTIONALITY
+        /*  COMPOSITE GROUP FUNCTIONALITY
         if (event.getSource() == GroupBtn) {
             if (ShapeList.getSelectionModel().getSelectedItems().size() > 1) {
                 createGroup();
@@ -238,6 +242,9 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
             }
         }
         // END COMPOSITE
+        */
+
+        
     }
 
     public void showPathPane() {
@@ -249,8 +256,95 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
         PathPane.setVisible(false);
         Message.setVisible(true);
     }
+
+@FXML
+private void onGroupToggle(ActionEvent e) {
+    if (GroupToggle.isSelected()) {
+        var selected = ShapeList.getSelectionModel().getSelectedIndices();
+        if (selected.size() >= 2) {
+            createGroup();
+            Message.setText("Grouped selected shapes");
+         
+        } else {
+            Message.setText("Select 2+ shapes to group");
+            GroupToggle.setSelected(false);
+        }
+    } else {
+        int idx = getSelectedGroupIndex();
+        if (idx >= 0) {
+            ungroupShape(idx);
+            Message.setText("Ungrouped successfully");
+        } else {
+            Message.setText("Select a group to ungroup");
+        }
+    }
+}
+
+private int getSelectedGroupIndex() {
+    var idxs = ShapeList.getSelectionModel().getSelectedIndices();
+    for (int i : idxs) {
+        if (i >= 0 && i < shapeList.size() && shapeList.get(i) instanceof ShapeGroup) return i;
+    }
+    int single = ShapeList.getSelectionModel().getSelectedIndex();
+    if (single >= 0 && single < shapeList.size() && shapeList.get(single) instanceof ShapeGroup) return single;
+    return -1;
+}
+
+
+private void createGroup() {
+    var indices = new ArrayList<>(ShapeList.getSelectionModel().getSelectedIndices());
+    if (indices.size() < 2) {
+        Message.setText("Select 2+ shapes to group");
+        return;
+    }
+
+   
+    indices.sort((a, b) -> b - a);
+
+    List<iShape> selectedShapes = new ArrayList<>();
+    for (int i = indices.size() - 1; i >= 0; i--) {
+        selectedShapes.add(shapeList.get(indices.get(i)));
+    }
+
     
-    // COMPOSITE METHODS
+    int insertIndex = indices.get(indices.size() - 1);
+
+    for (int idx : indices) shapeList.remove(idx);
+
+    ShapeGroup group = new ShapeGroup(selectedShapes);
+    shapeList.add(insertIndex, group);
+
+   
+    ShapeList.getSelectionModel().clearSelection();
+    ShapeList.getSelectionModel().select(insertIndex);
+
+    canvasManager.refreshWithHistory(shapeList, primary);
+    ShapeList.setItems(getStringList());
+    Message.setText("Shapes grouped successfully");
+}
+
+
+private void ungroupShape(int groupIndex) {
+    ShapeGroup group = (ShapeGroup) shapeList.get(groupIndex);
+    List<iShape> children = group.getShapes();
+
+    shapeList.remove(groupIndex);
+    shapeList.addAll(groupIndex, children);
+
+   
+    ShapeList.getSelectionModel().clearSelection();
+    for (int i = 0; i < children.size(); i++) {
+        ShapeList.getSelectionModel().select(groupIndex + i);
+    }
+
+    canvasManager.refreshWithHistory(shapeList, primary);
+    ShapeList.setItems(getStringList());
+    Message.setText("Group ungrouped successfully");
+}
+
+
+    
+    /*  COMPOSITE METHODS1
     private void createGroup() {
         List<iShape> selectedShapes = new ArrayList<>();
         List<Integer> indices = new ArrayList<>(
@@ -277,6 +371,7 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
     Message.setText("Shapes grouped successfully");
 }
 
+
     private void ungroupShape(int groupIndex) {
         ShapeGroup group = (ShapeGroup) shapeList.get(groupIndex);
         List<iShape> individualShapes = group.getShapes();
@@ -289,8 +384,11 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
         Message.setText("Group ungrouped successfully");
     }
 
+    */
+
 
     //decorator
+    /* 
     @FXML
     private void handleShadowMenu(ActionEvent event) {
         if (!ShapeList.getSelectionModel().isEmpty()) {
@@ -316,7 +414,9 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
             Message.setText("You need to pick a shape first to toggle shadow.");
         }
     }
+    */
     //decorator
+    /* 
     @FXML
     private void handleBorderMenu(ActionEvent event) {
         if (!ShapeList.getSelectionModel().isEmpty()) {
@@ -341,7 +441,7 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
         } else {
             Message.setText("You need to pick a shape first to toggle border.");
         }
-    }
+    }*/
 
     public void startDrag(MouseEvent event) {
         start = new Point2D(event.getX(), event.getY());
@@ -476,6 +576,8 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
         ShapeList.setItems(getStringList());
     }
 
+    
+
     public void dragFunction() {
         String type = ShapeBox.getValue();
         iShape sh;
@@ -494,27 +596,174 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
 
     //Observer DP
     // COMPOSITE UPDATE -  getStringList to handle groups
-      public ObservableList<String> getStringList() {
-        ObservableList<String> l = FXCollections.observableArrayList();
-        try {
-            for (int i = 0; i < shapeList.size(); i++) {
-                iShape shape = shapeList.get(i);
-                String type = shape.getType();
-                Point2D topLeft = shape.getTopLeft();
-                
-                if (shape instanceof ShapeGroup) {
-                    ShapeGroup group = (ShapeGroup) shape;
-                    l.add("Group (" + group.getShapes().size() + " shapes) at (" + 
-                         (int)topLeft.getX() + "," + (int)topLeft.getY() + ")");
-                } else {
-                    l.add(type + "  (" + (int)topLeft.getX() + "," + (int)topLeft.getY() + ")");
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return l;
+    // ===== Helpers for decorators =====
+private boolean hasDecorator(iShape s, Class<? extends ShapeDecorator> clazz) {
+    iShape cur = s;
+    while (cur instanceof ShapeDecorator) {
+        if (clazz.isInstance(cur)) return true;
+        cur = ((ShapeDecorator) cur).getDecoratedShape();
     }
+    return false;
+}
+
+private iShape removeDecorator(iShape s, Class<? extends ShapeDecorator> clazz) {
+    return ShapeDecorator.removeDecoratorOfClass(s, clazz);
+}
+
+private iShape toggleBorder(iShape s) {
+    return hasDecorator(s, BorderDecorator.class)
+            ? removeDecorator(s, BorderDecorator.class)
+            : new BorderDecorator(s, Color.BLACK, 3.0);
+}
+
+private iShape toggleShadow(iShape s) {
+    return hasDecorator(s, ShadowDecorator.class)
+            ? removeDecorator(s, ShadowDecorator.class)
+            : new ShadowDecorator(s);
+}
+
+@FXML
+private void handleBorderMenu(ActionEvent event) {
+    if (ShapeList.getSelectionModel().isEmpty()) {
+        Message.setText("You need to pick a shape first to toggle border.");
+        return;
+    }
+    int index = ShapeList.getSelectionModel().getSelectedIndex();
+    iShape wrapped = shapeList.get(index);
+    iShape core = unwrap(wrapped);
+
+    if (core instanceof ShapeGroup g) {
+       
+        List<iShape> kids = new ArrayList<>();
+        for (iShape child : g.getShapes()) {
+            kids.add(toggleBorder(child));
+        }
+        shapeList.set(index, new ShapeGroup(kids));
+        Message.setText("Toggled Border for group children");
+    } else {
+        shapeList.set(index, toggleBorder(wrapped));
+        Message.setText("Toggled Border");
+    }
+
+    canvasManager.refreshWithHistory(shapeList, primary);
+    ShapeList.setItems(getStringList());
+}
+
+@FXML
+private void handleShadowMenu(ActionEvent event) {
+    if (ShapeList.getSelectionModel().isEmpty()) {
+        Message.setText("You need to pick a shape first to toggle shadow.");
+        return;
+    }
+    int index = ShapeList.getSelectionModel().getSelectedIndex();
+    iShape wrapped = shapeList.get(index);
+    iShape core = unwrap(wrapped);
+
+    if (core instanceof ShapeGroup g) {
+        List<iShape> kids = new ArrayList<>();
+        for (iShape child : g.getShapes()) {
+            kids.add(toggleShadow(child));
+        }
+        shapeList.set(index, new ShapeGroup(kids));
+        Message.setText("Toggled Shadow for group children");
+    } else {
+        shapeList.set(index, toggleShadow(wrapped));
+        Message.setText("Toggled Shadow");
+    }
+
+    canvasManager.refreshWithHistory(shapeList, primary);
+    ShapeList.setItems(getStringList());
+}
+
+
+    private iShape unwrap(iShape s) {
+    while (s instanceof ShapeDecorator) {
+        s = ((ShapeDecorator) s).getDecoratedShape();
+    }
+    return s;
+    }
+
+    private iShape rebuildWithSameDecorators(iShape original, iShape newCore) {
+  
+    java.util.List<ShapeDecorator> decorators = new java.util.ArrayList<>();
+    iShape cur = original;
+    while (cur instanceof ShapeDecorator) {
+        decorators.add((ShapeDecorator) cur);
+        cur = ((ShapeDecorator) cur).getDecoratedShape();
+    }
+    iShape wrapped = newCore;
+    for (int i = decorators.size() - 1; i >= 0; --i) {
+        ShapeDecorator d = decorators.get(i);
+        try {
+            if (d instanceof BorderDecorator) {
+              
+                try {
+                    var fColor = BorderDecorator.class.getDeclaredField("borderColor");
+                    var fWidth = BorderDecorator.class.getDeclaredField("borderWidth");
+                    fColor.setAccessible(true); fWidth.setAccessible(true);
+                    Color bc = (Color) fColor.get(d);
+                    double bw = fWidth.getDouble(d);
+                    wrapped = new BorderDecorator(wrapped, bc, bw);
+                } catch (Exception ex) {
+                    wrapped = new BorderDecorator(wrapped);
+                }
+                continue;
+            }
+            if (d instanceof ShadowDecorator) {
+                try {
+                    var fColor = ShadowDecorator.class.getDeclaredField("color");
+                    var fLayers = ShadowDecorator.class.getDeclaredField("layers");
+                    var fOffsetX = ShadowDecorator.class.getDeclaredField("offsetX");
+                    var fOffsetY = ShadowDecorator.class.getDeclaredField("offsetY");
+                    var fPadding = ShadowDecorator.class.getDeclaredField("padding");
+                    fColor.setAccessible(true); fLayers.setAccessible(true);
+                    fOffsetX.setAccessible(true); fOffsetY.setAccessible(true); fPadding.setAccessible(true);
+                    Color sc = (Color) fColor.get(d);
+                    int layers = fLayers.getInt(d);
+                    double ox = fOffsetX.getDouble(d), oy = fOffsetY.getDouble(d), pad = fPadding.getDouble(d);
+                    ShadowDecorator sd = new ShadowDecorator(wrapped, sc, layers, ox, oy);
+                    sd.setPadding(pad);
+                    wrapped = sd;
+                } catch (Exception ex) {
+                    wrapped = new ShadowDecorator(wrapped);
+                }
+                continue;
+            }
+            var cons = d.getClass().getDeclaredConstructor(iShape.class);
+            cons.setAccessible(true);
+            wrapped = cons.newInstance(wrapped);
+        } catch (Exception ignore) {}
+    }
+    return wrapped;
+}
+
+
+public ObservableList<String> getStringList() {
+    ObservableList<String> l = FXCollections.observableArrayList();
+    try {
+        int groupCount = 0;
+        for (int i = 0; i < shapeList.size(); i++) {
+            iShape wrapped = shapeList.get(i);
+            iShape core = unwrap(wrapped);
+            Point2D topLeft = core.getTopLeft();
+
+            if (core instanceof ShapeGroup) {
+                ShapeGroup g = (ShapeGroup) core;
+                groupCount++;
+                l.add("Group " + groupCount + " (" + g.getShapes().size() + " shapes) at (" +
+                      (int) topLeft.getX() + "," + (int) topLeft.getY() + ")");
+            } else {
+                l.add(core.getType() + "  (" + (int) topLeft.getX() + "," + (int) topLeft.getY() + ")");
+            }
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+    return l;
+}
+
+
+  
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -533,6 +782,15 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
 
         canvasManager = CanvasManager.getInstance();
         canvasManager.initializeCanvas(CanvasBox);
+
+        
+GroupToggle.selectedProperty().addListener((obs, oldV, isOn) -> {
+    GroupToggle.setStyle(isOn
+        ? "-fx-background-radius:0; -fx-background-color:#5EC2FF;"  
+        : "-fx-background-radius:0; -fx-background-color:#a8d8ea;"  
+    );
+});
+
     }
 
     @Override
