@@ -493,19 +493,27 @@ private void ungroupShape(int groupIndex) {
     }
 
     public void resizeFunction() {
-        int index = ShapeList.getSelectionModel().getSelectedIndex();
+            int index = ShapeList.getSelectionModel().getSelectedIndex();
+    if (index < 0) return;
+
+    iShape selected = shapeList.get(index);
+    iShape core = unwrap(selected);
+
+    if (core instanceof ShapeGroup) {
+        Message.setText("Resize not supported for grouped shapes. Please ungroup first.");
+        return; 
+    }
+
         Color c = shapeList.get(index).getFillColor();
         start = shapeList.get(index).getTopLeft();
 
         //Factory DP - Use the factory instance and iShape
-        iShape selected = shapeList.get(index);
         java.util.List<ShapeDecorator> decorators = new java.util.ArrayList<>();
         iShape cur = selected;
         while (cur instanceof ShapeDecorator) {
             decorators.add((ShapeDecorator) cur);
             cur = ((ShapeDecorator) cur).getDecoratedShape();
         }
-        iShape core = cur;
         String type = core.getType();
         iShape newCore = shapeFactory.createShape(type, start, end, ColorBox.getValue());
 
