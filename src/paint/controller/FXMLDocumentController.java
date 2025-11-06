@@ -97,7 +97,7 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
     private CanvasManager canvasManager;
 
     //Shape list management - Use iShape consistently
-    private ArrayList<iShape> shapeList = new ArrayList<>();
+    private ArrayList<iShape> shapeList = new ArrayList<>(); //object creation of group
     private IShapeFactory shapeFactory;
 
     private boolean move = false;
@@ -228,6 +228,8 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
         Message.setVisible(true);
     }
 
+    // COMPOSITE DP - Grouping and Ungrouping
+
 @FXML
 private void onGroupToggle(ActionEvent e) {
     if (GroupToggle.isSelected()) {
@@ -261,7 +263,7 @@ private int getSelectedGroupIndex() {
     return -1;
 }
 
-
+// COMPOSITE DP - initialize grouping and ungrouping
 private void createGroup() {
     var indices = new ArrayList<>(ShapeList.getSelectionModel().getSelectedIndices());
     if (indices.size() < 2) {
