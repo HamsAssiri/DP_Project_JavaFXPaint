@@ -1,6 +1,5 @@
 package paint.controller;
 
-import paint.model.Shape;
 import paint.model.iShape;
 
 

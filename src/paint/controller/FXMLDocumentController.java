@@ -78,12 +78,6 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
     private Canvas CanvasBox;
     @FXML
     private Button CopyBtn;
-    
-    // Composite Buttons
-    
-    //private Button GroupBtn;
-    
-    //private Button UngroupBtn;
 
     @FXML
      private ToggleButton GroupToggle;
@@ -221,30 +215,7 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
             }
             hidePathPane();
         }
-        
-        /*  COMPOSITE GROUP FUNCTIONALITY
-        if (event.getSource() == GroupBtn) {
-            if (ShapeList.getSelectionModel().getSelectedItems().size() > 1) {
-                createGroup();
-            } else {
-                Message.setText("Select multiple shapes to group");
-            }
-        }
 
-        if (event.getSource() == UngroupBtn) {
-            if (!ShapeList.getSelectionModel().isEmpty()) {
-                int index = ShapeList.getSelectionModel().getSelectedIndex();
-                if (shapeList.get(index) instanceof ShapeGroup) {
-                    ungroupShape(index);
-                } else {
-                    Message.setText("Select a group to ungroup");
-                }
-            }
-        }
-        // END COMPOSITE
-        */
-
-        
     }
 
     public void showPathPane() {
@@ -297,8 +268,6 @@ private void createGroup() {
         Message.setText("Select 2+ shapes to group");
         return;
     }
-
-   
     indices.sort((a, b) -> b - a);
 
     List<iShape> selectedShapes = new ArrayList<>();
@@ -306,7 +275,6 @@ private void createGroup() {
         selectedShapes.add(shapeList.get(indices.get(i)));
     }
 
-    
     int insertIndex = indices.get(indices.size() - 1);
 
     for (int idx : indices) shapeList.remove(idx);
@@ -341,108 +309,6 @@ private void ungroupShape(int groupIndex) {
     ShapeList.setItems(getStringList());
     Message.setText("Group ungrouped successfully");
 }
-
-
-    
-    /*  COMPOSITE METHODS1
-    private void createGroup() {
-        List<iShape> selectedShapes = new ArrayList<>();
-        List<Integer> indices = new ArrayList<>(
-        ShapeList.getSelectionModel().getSelectedIndices()
-        );
-    
-    // Sort indices in descending order to avoid index shifting during removal
-    indices.sort((a, b) -> b.compareTo(a));
-    
-    for (int index : indices) {
-        selectedShapes.add(shapeList.get(index));
-    }
-    
-    // Remove individual shapes and add group
-    for (int index : indices) {
-        shapeList.remove(index); // FIXED: Just use the primitive int directly
-    }
-    
-    ShapeGroup group = new ShapeGroup(selectedShapes);
-    shapeList.add(group);
-    
-    canvasManager.refreshWithHistory(shapeList, primary);
-    ShapeList.setItems(getStringList());
-    Message.setText("Shapes grouped successfully");
-}
-
-
-    private void ungroupShape(int groupIndex) {
-        ShapeGroup group = (ShapeGroup) shapeList.get(groupIndex);
-        List<iShape> individualShapes = group.getShapes();
-        
-        shapeList.remove(groupIndex);
-        shapeList.addAll(individualShapes);
-        
-        canvasManager.refreshWithHistory(shapeList, primary);
-        ShapeList.setItems(getStringList());
-        Message.setText("Group ungrouped successfully");
-    }
-
-    */
-
-
-    //decorator
-    /* 
-    @FXML
-    private void handleShadowMenu(ActionEvent event) {
-        if (!ShapeList.getSelectionModel().isEmpty()) {
-            int index = ShapeList.getSelectionModel().getSelectedIndex();
-            iShape s = shapeList.get(index);
-            boolean has = false;
-            iShape cur = s;
-            while (cur instanceof ShapeDecorator) {
-                if (cur instanceof ShadowDecorator) {
-                    has = true;
-                    break;
-                }
-                cur = ((ShapeDecorator) cur).getDecoratedShape();
-            }
-            if (!has) {
-                shapeList.set(index, new ShadowDecorator(s));
-            } else {
-                shapeList.set(index, ShapeDecorator.removeDecoratorOfClass(s, ShadowDecorator.class));
-            }
-            canvasManager.refreshWithHistory(shapeList, primary);
-            ShapeList.setItems(getStringList());
-        } else {
-            Message.setText("You need to pick a shape first to toggle shadow.");
-        }
-    }
-    */
-    //decorator
-    /* 
-    @FXML
-    private void handleBorderMenu(ActionEvent event) {
-        if (!ShapeList.getSelectionModel().isEmpty()) {
-            int index = ShapeList.getSelectionModel().getSelectedIndex();
-            iShape s = shapeList.get(index);
-            boolean has = false;
-            iShape cur = s;
-            while (cur instanceof ShapeDecorator) {
-                if (cur instanceof BorderDecorator) {
-                    has = true;
-                    break;
-                }
-                cur = ((ShapeDecorator) cur).getDecoratedShape();
-            }
-            if (!has) {
-                shapeList.set(index, new BorderDecorator(s, Color.BLACK, 3.0));
-            } else {
-                shapeList.set(index, ShapeDecorator.removeDecoratorOfClass(s, BorderDecorator.class));
-            }
-            canvasManager.refreshWithHistory(shapeList, primary);
-            ShapeList.setItems(getStringList());
-        } else {
-            Message.setText("You need to pick a shape first to toggle border.");
-        }
-    }*/
-
     public void startDrag(MouseEvent event) {
         start = new Point2D(event.getX(), event.getY());
         Message.setText("");
@@ -621,7 +487,7 @@ private iShape removeDecorator(iShape s, Class<? extends ShapeDecorator> clazz) 
 private iShape toggleBorder(iShape s) {
     return hasDecorator(s, BorderDecorator.class)
             ? removeDecorator(s, BorderDecorator.class)
-            : new BorderDecorator(s, Color.BLACK, 3.0);
+            : new BorderDecorator(s);
 }
 
 private iShape toggleShadow(iShape s) {
@@ -691,61 +557,6 @@ private void handleShadowMenu(ActionEvent event) {
     return s;
     }
 
-    private iShape rebuildWithSameDecorators(iShape original, iShape newCore) {
-  
-    java.util.List<ShapeDecorator> decorators = new java.util.ArrayList<>();
-    iShape cur = original;
-    while (cur instanceof ShapeDecorator) {
-        decorators.add((ShapeDecorator) cur);
-        cur = ((ShapeDecorator) cur).getDecoratedShape();
-    }
-    iShape wrapped = newCore;
-    for (int i = decorators.size() - 1; i >= 0; --i) {
-        ShapeDecorator d = decorators.get(i);
-        try {
-            if (d instanceof BorderDecorator) {
-              
-                try {
-                    var fColor = BorderDecorator.class.getDeclaredField("borderColor");
-                    var fWidth = BorderDecorator.class.getDeclaredField("borderWidth");
-                    fColor.setAccessible(true); fWidth.setAccessible(true);
-                    Color bc = (Color) fColor.get(d);
-                    double bw = fWidth.getDouble(d);
-                    wrapped = new BorderDecorator(wrapped, bc, bw);
-                } catch (Exception ex) {
-                    wrapped = new BorderDecorator(wrapped);
-                }
-                continue;
-            }
-            if (d instanceof ShadowDecorator) {
-                try {
-                    var fColor = ShadowDecorator.class.getDeclaredField("color");
-                    var fLayers = ShadowDecorator.class.getDeclaredField("layers");
-                    var fOffsetX = ShadowDecorator.class.getDeclaredField("offsetX");
-                    var fOffsetY = ShadowDecorator.class.getDeclaredField("offsetY");
-                    var fPadding = ShadowDecorator.class.getDeclaredField("padding");
-                    fColor.setAccessible(true); fLayers.setAccessible(true);
-                    fOffsetX.setAccessible(true); fOffsetY.setAccessible(true); fPadding.setAccessible(true);
-                    Color sc = (Color) fColor.get(d);
-                    int layers = fLayers.getInt(d);
-                    double ox = fOffsetX.getDouble(d), oy = fOffsetY.getDouble(d), pad = fPadding.getDouble(d);
-                    ShadowDecorator sd = new ShadowDecorator(wrapped, sc, layers, ox, oy);
-                    sd.setPadding(pad);
-                    wrapped = sd;
-                } catch (Exception ex) {
-                    wrapped = new ShadowDecorator(wrapped);
-                }
-                continue;
-            }
-            var cons = d.getClass().getDeclaredConstructor(iShape.class);
-            cons.setAccessible(true);
-            wrapped = cons.newInstance(wrapped);
-        } catch (Exception ignore) {}
-    }
-    return wrapped;
-}
-
-
 public ObservableList<String> getStringList() {
     ObservableList<String> l = FXCollections.observableArrayList();
     try {
@@ -769,9 +580,6 @@ public ObservableList<String> getStringList() {
     }
     return l;
 }
-
-
-  
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
