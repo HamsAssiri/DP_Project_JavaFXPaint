@@ -42,7 +42,6 @@ public class BorderDecorator extends ShapeDecorator {
 
         gc.setLineWidth(borderWidth);
 
-    // Use the innermost wrapped shape so instanceof checks match the concrete shape
     iShape core = ShapeDecorator.unwrapAll(decoratedShape);
     Point2D tl = core.getTopLeft();
     Point2D end = core.getEndPosition();

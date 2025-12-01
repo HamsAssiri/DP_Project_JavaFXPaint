@@ -7,7 +7,6 @@ import java.util.logging.Logger;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
-import paint.model.Shape;
 import paint.model.iShape;
 
 public class CanvasManager {
