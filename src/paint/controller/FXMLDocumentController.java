@@ -33,6 +33,11 @@ import paint.model.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import javafx.scene.control.SelectionMode; // For composite
+import java.util.List;       // مهم
+import paint.controller.CanvasVersionMemento;
+import paint.controller.VersionManager;
+
+
 
 
 public class FXMLDocumentController implements Initializable, DrawingEngine {
@@ -78,7 +83,7 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
     private Canvas CanvasBox;
     @FXML
     private Button CopyBtn;
-    
+  
     // Composite Buttons
     
     //private Button GroupBtn;
@@ -116,6 +121,10 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
     //MEMENTO DP - Fix the stack types to use iShape
     private Stack<ArrayList<iShape>> primary = new Stack<>();
     private Stack<ArrayList<iShape>> secondary = new Stack<>();
+
+    private VersionManager versionManager = new VersionManager();
+
+
 
     @FXML
     private void handleButtonAction(ActionEvent event) {
@@ -221,6 +230,8 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
             }
             hidePathPane();
         }
+
+
         
         /*  COMPOSITE GROUP FUNCTIONALITY
         if (event.getSource() == GroupBtn) {
@@ -790,6 +801,8 @@ public ObservableList<String> getStringList() {
 
         canvasManager = CanvasManager.getInstance();
         canvasManager.initializeCanvas(CanvasBox);
+        versionManager = new VersionManager();
+
 
         
 GroupToggle.selectedProperty().addListener((obs, oldV, isOn) -> {
@@ -918,5 +931,65 @@ GroupToggle.selectedProperty().addListener((obs, oldV, isOn) -> {
     @Override
     public void installPluginShape(String jarPath) {
         Message.setText("Not supported yet.");
-    }   
+    } 
+
+
+    
+    // Creates and saves a snapshot (version) of the current shapes list
+    public void saveCurrentVersion(String name) {
+
+    // Avoid saving empty canvas
+    if (shapeList.isEmpty()) {
+        System.out.println("saveCurrentVersion: No shapes to save.");
+        return;
+    }
+
+    // Ensure the version manager exists
+    if (versionManager == null) {
+        versionManager = new VersionManager();
+    }
+
+    // Auto-generate version name if none provided
+    String versionName = (name == null || name.isBlank())
+            ? "Version " + (versionManager.size() + 1)
+            : name;
+
+    // Create snapshot and store it
+    CanvasVersionMemento snapshot = new CanvasVersionMemento(shapeList, versionName);
+    versionManager.addVersion(snapshot);
+
+    System.out.println("Saved version: " + versionName +
+                       " | Shapes count = " + shapeList.size());
+    }
+
+
+     // Restores a snapshot (version) from the stored versions list
+     public void restoreVersionAt(int index) {
+
+    // No versions saved yet
+    if (versionManager == null || versionManager.size() == 0) {
+        System.out.println("restoreVersionAt: No versions available.");
+        return;
+    }
+
+    // Validate index
+    CanvasVersionMemento snapshot = versionManager.getVersion(index);
+    if (snapshot == null) {
+        System.out.println("restoreVersionAt: Invalid version index -> " + index);
+        return;
+    }
+
+    // Restore shapes state
+    this.shapeList = new ArrayList<>(snapshot.getShapesSnapshot());
+
+    // Redraw canvas and update UI
+    canvasManager.redrawAll(shapeList);
+    ShapeList.setItems(getStringList());
+
+    System.out.println("Restored version: " + snapshot.getName() +
+                       " | Shapes count = " + shapeList.size());
+      }
+
+
+ 
 }
