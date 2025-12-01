@@ -28,6 +28,8 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.*;
 import javax.xml.parsers.ParserConfigurationException;
 import org.xml.sax.SAXException;
+
+import paint.command.*;
 import paint.model.*;
 
 import java.lang.reflect.Constructor;
@@ -96,6 +98,10 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
     //SINGLETON DP - Canvas Manager
     private CanvasManager canvasManager;
 
+    //Command Manager 
+    CommandManager cmdManager = new CommandManager();
+
+
     //Shape list management - Use iShape consistently
     private ArrayList<iShape> shapeList = new ArrayList<>(); //object creation of group
     private IShapeFactory shapeFactory;
@@ -119,10 +125,13 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
         }
 
         Message.setText("");
+
         if (event.getSource() == DeleteBtn) {
             if (!ShapeList.getSelectionModel().isEmpty()) {
                 int index = ShapeList.getSelectionModel().getSelectedIndex();
-                removeShape(shapeList.get(index));
+                iShape selected = shapeList.get(index);
+                Command deleteCmd = new DeleteShapeCommand(this, selected, index);
+                cmdManager.executeCommand(deleteCmd);
             } else {
                 Message.setText("You need to pick a shape first to delete it.");
             }
@@ -131,10 +140,10 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
         if (event.getSource() == RecolorBtn) {
             if (!ShapeList.getSelectionModel().isEmpty()) {
                 int index = ShapeList.getSelectionModel().getSelectedIndex();
-                shapeList.get(index).setFillColor(ColorBox.getValue());
-                // Use CanvasManager singleton for refresh operations
-                canvasManager.refreshWithHistory(shapeList, primary);
-                ShapeList.setItems(getStringList());
+                Color oldColor = shapeList.get(index).getFillColor();
+                Color newColor = ColorBox.getValue();
+                Command recolorCmd = new RecolorCommand(this, index, oldColor, newColor);
+                cmdManager.executeCommand(recolorCmd);
             } else {
                 Message.setText("You need to pick a shape first to recolor it.");
             }
@@ -168,19 +177,19 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
         }
 
         if (event.getSource() == UndoBtn) {
-            if (primary.empty()) {
+            if (!cmdManager.canUndo()) {
                 Message.setText("We are back to zero point! .. Can Undo nothing more!");
                 return;
             }
-            undo();
+            cmdManager.undo();
         }
 
         if (event.getSource() == RedoBtn) {
-            if (secondary.empty()) {
+            if (!cmdManager.canRedo()) {
                 Message.setText("There is no more history for me to get .. Go search history books.");
                 return;
             }
-            redo();
+            cmdManager.redo();
         }
 
         if (event.getSource() == SaveBtn) {
@@ -215,7 +224,6 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
             }
             hidePathPane();
         }
-
     }
 
     public void showPathPane() {
@@ -328,145 +336,113 @@ private void ungroupShape(int groupIndex) {
     public void clickFunction() throws CloneNotSupportedException {
         if (move) {
             move = false;
-            moveFunction();
+            int index = ShapeList.getSelectionModel().getSelectedIndex();
+            Point2D oldP = shapeList.get(index).getTopLeft();
+            Point2D newP = start;
+            Command moveCmd = new MoveShapeCommand(this, index, oldP, newP);
+            cmdManager.executeCommand(moveCmd);
         } else if (copy) {
             copy = false;
-            copyFunction();
+            int index = ShapeList.getSelectionModel().getSelectedIndex();
+            iShape copied = shapeList.get(index).clone();
+            copied.setTopLeft(start);
+            Command copyCmd = new CopyShapeCommand(this, copied, shapeList.size());
+            cmdManager.executeCommand(copyCmd);
         } else if (resize) {
             resize = false;
-            resizeFunction();
-        }
-    }
-
-    public void moveFunction() {
-        int index = ShapeList.getSelectionModel().getSelectedIndex();
-        shapeList.get(index).setTopLeft(start);
-        // Use CanvasManager singleton for refresh operations
-        canvasManager.refreshWithHistory(shapeList, primary);
-        ShapeList.setItems(getStringList());
-    }
-
-    public void copyFunction() throws CloneNotSupportedException {
-        int index = ShapeList.getSelectionModel().getSelectedIndex();
-        iShape temp = shapeList.get(index).clone(); // Use clone() instead of cloneShape()
-        if (temp == null) {
-            System.out.println("Error cloning failed!");
-        } else {
-            shapeList.add(temp);
-            shapeList.get(shapeList.size() - 1).setTopLeft(start);
-            // Use CanvasManager singleton for refresh operations
-            canvasManager.refreshWithHistory(shapeList, primary);
-            ShapeList.setItems(getStringList());
-        }
-    }
-
-    public void resizeFunction() {
             int index = ShapeList.getSelectionModel().getSelectedIndex();
-    if (index < 0) return;
-
-    iShape selected = shapeList.get(index);
-    iShape core = unwrap(selected);
-
-    if (core instanceof ShapeGroup) {
-        Message.setText("Resize not supported for grouped shapes. Please ungroup first.");
-        return; 
-    }
-
-        Color c = shapeList.get(index).getFillColor();
-        start = shapeList.get(index).getTopLeft();
-
-        //Factory DP - Use the factory instance and iShape
-        java.util.List<ShapeDecorator> decorators = new java.util.ArrayList<>();
-        iShape cur = selected;
-        while (cur instanceof ShapeDecorator) {
-            decorators.add((ShapeDecorator) cur);
-            cur = ((ShapeDecorator) cur).getDecoratedShape();
-        }
-        String type = core.getType();
-        iShape newCore = shapeFactory.createShape(type, start, end, ColorBox.getValue());
-
-        iShape wrapped = newCore;
-        for (int i = decorators.size() - 1; i >= 0; --i) {
-            ShapeDecorator d = decorators.get(i);
-            try {
-                if (d instanceof BorderDecorator) {
-                    try {
-                        Field fColor = BorderDecorator.class.getDeclaredField("borderColor");
-                        Field fWidth = BorderDecorator.class.getDeclaredField("borderWidth");
-                        fColor.setAccessible(true);
-                        fWidth.setAccessible(true);
-                        Color bc = (Color) fColor.get(d);
-                        double bw = fWidth.getDouble(d);
-                        wrapped = new BorderDecorator(wrapped, bc, bw);
-                        continue;
-                    } catch (Exception ex) {
-                        // fallback to default BorderDecorator
-                        wrapped = new BorderDecorator(wrapped);
-                        continue;
-                    }
-                } else if (d instanceof ShadowDecorator) {
-                    try {
-                        Field fColor = ShadowDecorator.class.getDeclaredField("color");
-                        Field fLayers = ShadowDecorator.class.getDeclaredField("layers");
-                        Field fOffsetX = ShadowDecorator.class.getDeclaredField("offsetX");
-                        Field fOffsetY = ShadowDecorator.class.getDeclaredField("offsetY");
-                        Field fPadding = ShadowDecorator.class.getDeclaredField("padding");
-                        fColor.setAccessible(true);
-                        fLayers.setAccessible(true);
-                        fOffsetX.setAccessible(true);
-                        fOffsetY.setAccessible(true);
-                        fPadding.setAccessible(true);
-                        Color sc = (Color) fColor.get(d);
-                        int layers = fLayers.getInt(d);
-                        double ox = fOffsetX.getDouble(d);
-                        double oy = fOffsetY.getDouble(d);
-                        double pad = fPadding.getDouble(d);
-                        ShadowDecorator sd = new ShadowDecorator(wrapped, sc, layers, ox, oy);
-                        sd.setPadding(pad);
-                        wrapped = sd;
-                        continue;
-                    } catch (Exception ex) {
-                        wrapped = new ShadowDecorator(wrapped);
-                        continue;
-                    }
-                }
+            iShape selected = shapeList.get(index);
+            iShape core = unwrap(selected);
+            if (core instanceof ShapeGroup) {
+                Message.setText("Resize not supported for grouped shapes. Please ungroup first.");
+                return;
+            }
+            Color oldColor = selected.getFillColor();
+            start = selected.getTopLeft();
+            java.util.List<ShapeDecorator> decorators = new java.util.ArrayList<>();
+            iShape cur = selected;
+            while (cur instanceof ShapeDecorator) {
+                decorators.add((ShapeDecorator) cur);
+                cur = ((ShapeDecorator) cur).getDecoratedShape();
+            }
+            String type = core.getType();
+            iShape newCore = shapeFactory.createShape(type, start, end, ColorBox.getValue());
+            iShape wrapped = newCore;
+            for (int i = decorators.size() - 1; i >= 0; --i) {
+                ShapeDecorator d = decorators.get(i);
                 try {
-                    Constructor<? extends ShapeDecorator> cons = d.getClass().getDeclaredConstructor(iShape.class);
-                    cons.setAccessible(true);
-                    wrapped = cons.newInstance(wrapped);
+                    if (d instanceof BorderDecorator) {
+                        try {
+                            Field fColor = BorderDecorator.class.getDeclaredField("borderColor");
+                            Field fWidth = BorderDecorator.class.getDeclaredField("borderWidth");
+                            fColor.setAccessible(true);
+                            fWidth.setAccessible(true);
+                            Color bc = (Color) fColor.get(d);
+                            double bw = fWidth.getDouble(d);
+                            wrapped = new BorderDecorator(wrapped, bc, bw);
+                            continue;
+                        } catch (Exception ex) {
+                            wrapped = new BorderDecorator(wrapped);
+                            continue;
+                        }
+                    } else if (d instanceof ShadowDecorator) {
+                        try {
+                            Field fColor = ShadowDecorator.class.getDeclaredField("color");
+                            Field fLayers = ShadowDecorator.class.getDeclaredField("layers");
+                            Field fOffsetX = ShadowDecorator.class.getDeclaredField("offsetX");
+                            Field fOffsetY = ShadowDecorator.class.getDeclaredField("offsetY");
+                            Field fPadding = ShadowDecorator.class.getDeclaredField("padding");
+                            fColor.setAccessible(true);
+                            fLayers.setAccessible(true);
+                            fOffsetX.setAccessible(true);
+                            fOffsetY.setAccessible(true);
+                            fPadding.setAccessible(true);
+                            Color sc = (Color) fColor.get(d);
+                            int layers = fLayers.getInt(d);
+                            double ox = fOffsetX.getDouble(d);
+                            double oy = fOffsetY.getDouble(d);
+                            double pad = fPadding.getDouble(d);
+                            ShadowDecorator sd = new ShadowDecorator(wrapped, sc, layers, ox, oy);
+                            sd.setPadding(pad);
+                            wrapped = sd;
+                            continue;
+                        } catch (Exception ex) {
+                            wrapped = new ShadowDecorator(wrapped);
+                            continue;
+                        }
+                    }
+                    try {
+                        Constructor<? extends ShapeDecorator> cons = d.getClass().getDeclaredConstructor(iShape.class);
+                        cons.setAccessible(true);
+                        wrapped = cons.newInstance(wrapped);
+                    } catch (Exception ex) {
+                    }
                 } catch (Exception ex) {
                 }
-            } catch (Exception ex) {
             }
+            if (wrapped.getType().equals("Line")) {
+                Message.setText("Line doesn't support this command. Sorry :(");
+                return;
+            }
+            iShape oldSnapshot = selected;
+            iShape newSnapshot = wrapped;
+            newSnapshot.setFillColor(oldColor);
+            Command resizeCmd = new ResizeShapeCommand(this, index, oldSnapshot, newSnapshot);
+            cmdManager.executeCommand(resizeCmd);
         }
-        iShape temp = wrapped;
-        if (temp.getType().equals("Line")) {
-            Message.setText("Line doesn't support this command. Sorry :(");
-            return;
-        }
-        shapeList.remove(index);
-        temp.setFillColor(c);
-        shapeList.add(index, temp);
-        // Use CanvasManager singleton for refresh operations
-        canvasManager.refreshWithHistory(shapeList, primary);
-        ShapeList.setItems(getStringList());
     }
-
-    
 
     public void dragFunction() {
         String type = ShapeBox.getValue();
         iShape sh;
-
-        // Use factory interface
         try {
             sh = shapeFactory.createShape(type, start, end, ColorBox.getValue());
         } catch (Exception e) {
             Message.setText("Don't be in a hurry! Choose a shape first :D");
             return;
         }
-
-        addShape(sh);
+        Command addCmd = new AddShapeCommand(this, sh, shapeList.size());
+        cmdManager.executeCommand(addCmd);
         canvasManager.drawShape(sh);
     }
 
@@ -650,33 +626,12 @@ GroupToggle.selectedProperty().addListener((obs, oldV, isOn) -> {
 
     @Override
     public void undo() {
-        if (secondary.size() < 21) {
-            ArrayList<iShape> temp = primary.pop();
-            secondary.push(temp);
-
-            if (primary.empty()) {
-                shapeList = new ArrayList<>();
-            } else {
-                temp = primary.peek();
-                shapeList = new ArrayList<>(temp); // Create a new list to avoid reference issues
-            }
-
-            canvasManager.redrawAll(shapeList);
-            ShapeList.setItems(getStringList());
-        } else {
-            Message.setText("Sorry, Cannot do more than 20 Undo's :'(");
-        }
+        cmdManager.undo();
     }
 
     @Override
     public void redo() {
-        ArrayList<iShape> temp = secondary.pop();
-        primary.push(new ArrayList<>(temp)); // Create a copy
-
-        shapeList = new ArrayList<>(temp); // Create a new list
-
-        canvasManager.redrawAll(shapeList);
-        ShapeList.setItems(getStringList());
+        cmdManager.redo();
     }
 
     @Override
@@ -729,4 +684,42 @@ GroupToggle.selectedProperty().addListener((obs, oldV, isOn) -> {
     public void installPluginShape(String jarPath) {
         Message.setText("Not supported yet.");
     }   
+
+    public void performRemoveAt(int index) {
+        if (index >= 0 && index < shapeList.size()) {
+            shapeList.remove(index);
+            canvasManager.refreshWithHistory(shapeList, primary);
+            ShapeList.setItems(getStringList());
+        }
+    }
+
+    public void performAddAt(int index, iShape shape) {
+        shapeList.add(index, shape);
+        canvasManager.refreshWithHistory(shapeList, primary);
+        ShapeList.setItems(getStringList());
+    }
+
+    public void performSetTopLeftAt(int index, Point2D p) {
+        if (index >= 0 && index < shapeList.size()) {
+            shapeList.get(index).setTopLeft(p);
+            canvasManager.refreshWithHistory(shapeList, primary);
+            ShapeList.setItems(getStringList());
+        }
+    }
+
+    public void performSetFillColorAt(int index, Color c) {
+        if (index >= 0 && index < shapeList.size()) {
+            shapeList.get(index).setFillColor(c);
+            canvasManager.refreshWithHistory(shapeList, primary);
+            ShapeList.setItems(getStringList());
+        }
+    }
+
+    public void performReplaceAt(int index, iShape shape) {
+        if (index >= 0 && index < shapeList.size()) {
+            shapeList.set(index, shape);
+            canvasManager.refreshWithHistory(shapeList, primary);
+            ShapeList.setItems(getStringList());
+        }
+    }
 }
