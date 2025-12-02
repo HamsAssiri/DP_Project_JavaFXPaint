@@ -249,7 +249,8 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
 @FXML
 private void onGroupToggle(ActionEvent e) {
     if (GroupToggle.isSelected()) {
-        var selected = ShapeList.getSelectionModel().getSelectedIndices();
+        //var selected = ShapeList.getSelectionModel().getSelectedIndices();
+        ObservableList<Integer> selected = ShapeList.getSelectionModel().getSelectedIndices();
         if (selected.size() >= 2) {
             createGroup();
             Message.setText("Grouped selected shapes");
@@ -270,7 +271,8 @@ private void onGroupToggle(ActionEvent e) {
 }
 
 private int getSelectedGroupIndex() {
-    var idxs = ShapeList.getSelectionModel().getSelectedIndices();
+    //var idxs = ShapeList.getSelectionModel().getSelectedIndices();
+    ObservableList<Integer> idxs = ShapeList.getSelectionModel().getSelectedIndices();
     for (int i : idxs) {
         if (i >= 0 && i < shapeList.size() && shapeList.get(i) instanceof ShapeGroup) return i;
     }
@@ -281,7 +283,9 @@ private int getSelectedGroupIndex() {
 
 // COMPOSITE DP - initialize grouping and ungrouping
 private void createGroup() {
-    var indices = new ArrayList<>(ShapeList.getSelectionModel().getSelectedIndices());
+    //var indices = new ArrayList<>(ShapeList.getSelectionModel().getSelectedIndices());
+    ArrayList<Integer> indices = new ArrayList<>(ShapeList.getSelectionModel().getSelectedIndices());
+
     if (indices.size() < 2) {
         Message.setText("Select 2+ shapes to group");
         return;
@@ -492,8 +496,9 @@ private void handleBorderMenu(ActionEvent event) {
     iShape wrapped = shapeList.get(index);
     iShape core = unwrap(wrapped);
 
-    if (core instanceof ShapeGroup g) {
-       
+    //To be Compatable with all version
+    if (core instanceof ShapeGroup ) {
+        ShapeGroup g = (ShapeGroup) core;
         List<iShape> kids = new ArrayList<>();
         for (iShape child : g.getShapes()) {
             kids.add(toggleBorder(child));
@@ -519,7 +524,8 @@ private void handleShadowMenu(ActionEvent event) {
     iShape wrapped = shapeList.get(index);
     iShape core = unwrap(wrapped);
 
-    if (core instanceof ShapeGroup g) {
+    if (core instanceof ShapeGroup) {
+         ShapeGroup g = (ShapeGroup) core;
         List<iShape> kids = new ArrayList<>();
         for (iShape child : g.getShapes()) {
             kids.add(toggleShadow(child));

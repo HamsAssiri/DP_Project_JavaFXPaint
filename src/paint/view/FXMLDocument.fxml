@@ -99,9 +99,9 @@
               <cursor>
               <Cursor fx:constant="HAND"/>
               </cursor>
-             </ToggleButton>
-
-                    
+             </ToggleButton> 
+             
+          
                      <!-- Composit buttons
                     <Button fx:id="GroupBtn" contentDisplay="CENTER" maxHeight="50.0" maxWidth="166.67" minHeight="50.0" minWidth="166.67" mnemonicParsing="false" onAction="#handleButtonAction" prefHeight="50.0" prefWidth="166.67" style="-fx-background-radius: 0px; -fx-background-color: #a8d8ea;" styleClass="btns" text="Group">
                        <cursor>
