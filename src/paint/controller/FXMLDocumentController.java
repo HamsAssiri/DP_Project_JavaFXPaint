@@ -35,6 +35,7 @@ import paint.model.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import javafx.scene.control.SelectionMode; // For composite
+import javafx.scene.control.TextInputDialog;// for Memento
 import paint.controller.CanvasVersionMemento;
 import paint.controller.VersionManager;
 
@@ -92,6 +93,14 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
     private Label Message;
     @FXML
     private ListView<String> ShapeList; // Added generic type
+    
+    // For Memento DP
+    @FXML private ComboBox<String> VersionComboBox;
+    @FXML private Button SaveVersionBtn;
+    @FXML private Button RestoreVersionBtn;
+    @FXML private Button DeleteVersionBtn;
+    @FXML private Label VersionCountLabel;
+
 
     /**
      * *CLASS VARIABLES**
@@ -601,6 +610,12 @@ GroupToggle.selectedProperty().addListener((obs, oldV, isOn) -> {
     );
 });
 
+    // Initialize version combo box - MEMENTO DP
+        refreshVersionComboBox();
+
+        // Auto-save initial version
+        saveCurrentVersion("Initial Version");
+        refreshVersionComboBox();
     }
 
     @Override
@@ -740,14 +755,34 @@ GroupToggle.selectedProperty().addListener((obs, oldV, isOn) -> {
     }
 
 
-    // Create a new version snapshot
-    public CanvasVersionMemento createVersion(String name) {
+   /* // Create a new version snapshot
+   public CanvasVersionMemento createVersion(String name) {
     String versionName = (name == null || name.isEmpty())
             ? "Version " + (versionManager.size() + 1)
             : name;
 
     return new CanvasVersionMemento(shapeList, versionName);
-}
+}*/
+    //Updated createVersion method using clone from shape class to save the states properly
+    public CanvasVersionMemento createVersion(String name) {
+        String versionName = (name == null || name.isEmpty())
+                ? "Version " + (versionManager.size() + 1)
+                : name;
+
+        // Create deep copy of shapes
+        List<iShape> clonedShapes = new ArrayList<>();
+        for (iShape shape : shapeList) {
+            try {
+                clonedShapes.add(shape.clone());
+            } catch (CloneNotSupportedException e) {
+                System.err.println("Failed to clone shape for version: " + e.getMessage());
+                // Fallback: add original to prevents crash
+                clonedShapes.add(shape);
+            }
+        }
+
+        return new CanvasVersionMemento(clonedShapes, versionName);
+    }
 
     // Save current shapes as a version
     public void saveCurrentVersion(String name) {
@@ -768,5 +803,73 @@ GroupToggle.selectedProperty().addListener((obs, oldV, isOn) -> {
     ShapeList.setItems(getStringList());
 }
 
+    //methods for Memento UI
+    @FXML
+    private void handleSaveVersionAction(ActionEvent event) {
+        // Show dialog to get version name
+        TextInputDialog dialog = new TextInputDialog("Version " + (versionManager.size() + 1));
+        dialog.setTitle("Save Version");
+        dialog.setHeaderText("Enter a name for this version:");
+        dialog.setContentText("Version name:");
 
+        dialog.showAndWait().ifPresent(name -> {
+            if (!name.trim().isEmpty()) {
+                saveCurrentVersion(name);
+                refreshVersionComboBox();
+                Message.setText("Version saved: " + name);
+            }
+        });
+    }
+    
+    @FXML
+    private void handleRestoreVersionAction(ActionEvent event) {
+        int selectedIndex = VersionComboBox.getSelectionModel().getSelectedIndex();
+        if (selectedIndex >= 0) {
+            restoreVersionAt(selectedIndex);
+            Message.setText("Restored version: " + VersionComboBox.getValue());
+        } else {
+            Message.setText("Please select a version to restore");
+        }
+    }
+
+    @FXML
+    private void handleDeleteVersionAction(ActionEvent event) {
+        int selectedIndex = VersionComboBox.getSelectionModel().getSelectedIndex();
+        if (selectedIndex >= 0) {
+            String versionName = VersionComboBox.getValue();
+            // Remove from version manager
+            if (selectedIndex < versionManager.size()) {
+                // We need to add a remove method to VersionManager
+                // For now, create a new list without the selected version
+                List<CanvasVersionMemento> newVersions = new ArrayList<>();
+                for (int i = 0; i < versionManager.size(); i++) {
+                    if (i != selectedIndex) {
+                        newVersions.add(versionManager.getVersion(i));
+                    }
+                }
+                // Create new VersionManager (simplified approach)
+                versionManager = new VersionManager();
+                for (CanvasVersionMemento m : newVersions) {
+                    versionManager.addVersion(m);
+                }
+
+                refreshVersionComboBox();
+                Message.setText("Deleted version: " + versionName);
+            }
+        } else {
+            Message.setText("Please select a version to delete");
+        }
+    }
+
+    // Helper method to refresh the version combo box
+    private void refreshVersionComboBox() {
+        ObservableList<String> versionNames = FXCollections.observableArrayList();
+        for (int i = 0; i < versionManager.size(); i++) {
+            CanvasVersionMemento m = versionManager.getVersion(i);
+            versionNames.add(m.getName());
+        }
+        VersionComboBox.setItems(versionNames);
+        VersionCountLabel.setText("Versions: " + versionManager.size());
+    }
+    
 }

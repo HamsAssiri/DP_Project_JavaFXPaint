@@ -144,11 +144,23 @@ public abstract class Shape implements iShape, java.lang.Cloneable{
     @Override
     public abstract void draw(Canvas canvas);
 
-    @Override
+    /*@Override
     public iShape clone() throws CloneNotSupportedException {
     Shape cloned = (Shape) super.clone();
     // Add deep copying for mutable fields if needed
     return cloned;
+}*/
+    //define clone for memento
+    @Override
+    public iShape clone() throws CloneNotSupportedException {
+        Shape cloned = (Shape) super.clone();
+        // Deep copy mutable fields
+        cloned.startPosition = new Point2D(this.startPosition.getX(), this.startPosition.getY());
+        cloned.endPosition = new Point2D(this.endPosition.getX(), this.endPosition.getY());
+        cloned.topLeft = new Point2D(this.topLeft.getX(), this.topLeft.getY());
+        cloned.properties = new HashMap<>(this.properties);
+        // Colors are immutable in JavaFX, so they're safe
+        return cloned;
 }
     
     public Shape cloneShape() throws CloneNotSupportedException {
