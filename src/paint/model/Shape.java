@@ -3,11 +3,9 @@ package paint.model;
 
 import java.util.HashMap;
 import java.util.Map;
-import javafx.animation.Interpolatable;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.*;
 
 
 public abstract class Shape implements iShape, java.lang.Cloneable{

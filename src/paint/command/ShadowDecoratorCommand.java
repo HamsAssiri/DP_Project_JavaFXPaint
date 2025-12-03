@@ -2,22 +2,24 @@ package paint.command;
 
 import paint.controller.FXMLDocumentController;
 import paint.model.iShape;
+import paint.model.ShapeDecorator;
+import paint.model.ShadowDecorator;
 
-public class ResizeShapeCommand implements Command {
+public class ShadowDecoratorCommand implements Command {
     private final FXMLDocumentController controller;
     private final int index;
-    private final iShape oldShape;
-    private final iShape newShape;
+    private iShape oldShape;
+    private iShape newShape;
 
-    public ResizeShapeCommand(FXMLDocumentController controller, int index, iShape oldShape, iShape newShape) {
+    public ShadowDecoratorCommand(FXMLDocumentController controller, int index) {
         this.controller = controller;
         this.index = index;
-        this.oldShape = oldShape;
-        this.newShape = newShape;
     }
 
     @Override
     public void execute() {
+        oldShape = controller.getShapeAt(index);
+        newShape = controller.toggleShadow(oldShape); // create a new shape with shadow toggled
         controller.performReplaceAt(index, newShape);
     }
 
@@ -28,6 +30,6 @@ public class ResizeShapeCommand implements Command {
 
     @Override
     public String getName() {
-        return "ResizeShape";
+        return "ToggleShadow";
     }
 }

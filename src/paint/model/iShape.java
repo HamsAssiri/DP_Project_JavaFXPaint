@@ -1,9 +1,6 @@
 package paint.model;
 
 import javafx.geometry.Point2D;
-import javafx.scene.canvas.Canvas;
-import javafx.scene.paint.Color;
-import java.util.Map;
 
 public interface iShape extends Cloneable{
     

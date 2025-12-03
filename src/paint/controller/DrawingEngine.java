@@ -1,5 +1,7 @@
 package paint.controller;
 
+import javafx.geometry.Point2D;
+import javafx.scene.paint.Color;
 import paint.model.iShape;
 
 
@@ -8,12 +10,12 @@ public interface DrawingEngine {
     
     /* redraw all shapes on the canvas */
     public void refresh(Object canvas);
-    
-    public void addShape(iShape shape);
-    
-    public void removeShape(iShape shape);
-    
-    public void updateShape(iShape oldShape, iShape newShape);
+
+    public void performRemoveAt(int index) ;
+    public void performAddAt(int index, iShape shape);
+    public void performSetTopLeftAt(int index, Point2D p);
+    public void performSetFillColorAt(int index, Color c);
+    public void performReplaceAt(int index, iShape shape) ;
     
     /* return the created shapes objects */
     public iShape[] getShapes();

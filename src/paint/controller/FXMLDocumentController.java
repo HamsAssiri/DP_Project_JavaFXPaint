@@ -256,12 +256,13 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
     // COMPOSITE DP - Grouping and Ungrouping
 
 @FXML
-private void onGroupToggle(ActionEvent e) {
+public void onGroupToggle(ActionEvent e) {
     if (GroupToggle.isSelected()) {
         //var selected = ShapeList.getSelectionModel().getSelectedIndices();
         ObservableList<Integer> selected = ShapeList.getSelectionModel().getSelectedIndices();
         if (selected.size() >= 2) {
-            createGroup();
+            Command groupCmd = new GroupShapesCommand(this, selected);
+            cmdManager.executeCommand(groupCmd);
             Message.setText("Grouped selected shapes");
          
         } else {
@@ -271,7 +272,8 @@ private void onGroupToggle(ActionEvent e) {
     } else {
         int idx = getSelectedGroupIndex();
         if (idx >= 0) {
-            ungroupShape(idx);
+            Command ungroupCmd = new UngroupShapesCommand(this, idx);
+            cmdManager.executeCommand(ungroupCmd);
             Message.setText("Ungrouped successfully");
         } else {
             Message.setText("Select a group to ungroup");
@@ -279,7 +281,7 @@ private void onGroupToggle(ActionEvent e) {
     }
 }
 
-private int getSelectedGroupIndex() {
+public int getSelectedGroupIndex() {
     //var idxs = ShapeList.getSelectionModel().getSelectedIndices();
     ObservableList<Integer> idxs = ShapeList.getSelectionModel().getSelectedIndices();
     for (int i : idxs) {
@@ -291,7 +293,7 @@ private int getSelectedGroupIndex() {
 }
 
 // COMPOSITE DP - initialize grouping and ungrouping
-private void createGroup() {
+public void createGroup() {
     //var indices = new ArrayList<>(ShapeList.getSelectionModel().getSelectedIndices());
     ArrayList<Integer> indices = new ArrayList<>(ShapeList.getSelectionModel().getSelectedIndices());
 
@@ -322,8 +324,30 @@ private void createGroup() {
     Message.setText("Shapes grouped successfully");
 }
 
+// Returns the newly created ShapeGroup and its insertion index
+public ShapeGroup groupShapesAtIndices(List<Integer> indices) {
+    if (indices.size() < 2) return null;
 
-private void ungroupShape(int groupIndex) {
+    indices.sort((a, b) -> b - a); // sort descending
+    List<iShape> selectedShapes = new ArrayList<>();
+    for (int idx : indices) {
+        selectedShapes.add(shapeList.get(idx));
+        shapeList.remove(idx);
+    }
+
+    int insertIndex = indices.get(indices.size() - 1);
+    ShapeGroup group = new ShapeGroup(selectedShapes);
+    shapeList.add(insertIndex, group);
+
+    canvasManager.refreshWithHistory(shapeList, primary);
+    ShapeList.setItems(getStringList());
+
+    return group; // return group for the command
+}
+
+
+
+public void ungroupShape(int groupIndex) {
     ShapeGroup group = (ShapeGroup) shapeList.get(groupIndex);
     List<iShape> children = group.getShapes();
 
@@ -483,13 +507,13 @@ private iShape removeDecorator(iShape s, Class<? extends ShapeDecorator> clazz) 
     return ShapeDecorator.removeDecoratorOfClass(s, clazz);
 }
 
-private iShape toggleBorder(iShape s) {
+public iShape toggleBorder(iShape s) {
     return hasDecorator(s, BorderDecorator.class)
             ? removeDecorator(s, BorderDecorator.class)
             : new BorderDecorator(s);
 }
 
-private iShape toggleShadow(iShape s) {
+public iShape toggleShadow(iShape s) {
     return hasDecorator(s, ShadowDecorator.class)
             ? removeDecorator(s, ShadowDecorator.class)
             : new ShadowDecorator(s);
@@ -502,25 +526,9 @@ private void handleBorderMenu(ActionEvent event) {
         return;
     }
     int index = ShapeList.getSelectionModel().getSelectedIndex();
-    iShape wrapped = shapeList.get(index);
-    iShape core = unwrap(wrapped);
-
-    //To be Compatable with all version
-    if (core instanceof ShapeGroup ) {
-        ShapeGroup g = (ShapeGroup) core;
-        List<iShape> kids = new ArrayList<>();
-        for (iShape child : g.getShapes()) {
-            kids.add(toggleBorder(child));
-        }
-        shapeList.set(index, new ShapeGroup(kids));
-        Message.setText("Toggled Border for group children");
-    } else {
-        shapeList.set(index, toggleBorder(wrapped));
-        Message.setText("Toggled Border");
-    }
-
-    canvasManager.refreshWithHistory(shapeList, primary);
-    ShapeList.setItems(getStringList());
+    Command borderCmd = new BorderDecoratorCommand(this, index);
+    cmdManager.executeCommand(borderCmd);
+    Message.setText("Toggled Border");
 }
 
 @FXML
@@ -530,24 +538,9 @@ private void handleShadowMenu(ActionEvent event) {
         return;
     }
     int index = ShapeList.getSelectionModel().getSelectedIndex();
-    iShape wrapped = shapeList.get(index);
-    iShape core = unwrap(wrapped);
-
-    if (core instanceof ShapeGroup) {
-         ShapeGroup g = (ShapeGroup) core;
-        List<iShape> kids = new ArrayList<>();
-        for (iShape child : g.getShapes()) {
-            kids.add(toggleShadow(child));
-        }
-        shapeList.set(index, new ShapeGroup(kids));
-        Message.setText("Toggled Shadow for group children");
-    } else {
-        shapeList.set(index, toggleShadow(wrapped));
-        Message.setText("Toggled Shadow");
-    }
-
-    canvasManager.refreshWithHistory(shapeList, primary);
-    ShapeList.setItems(getStringList());
+    Command shadowCmd = new ShadowDecoratorCommand(this, index);
+    cmdManager.executeCommand(shadowCmd);
+    Message.setText("Toggled Shadow");
 }
 
 
@@ -626,28 +619,6 @@ GroupToggle.selectedProperty().addListener((obs, oldV, isOn) -> {
 
     public void redraw(Canvas canvas) {
         canvasManager.redrawAll(shapeList);
-    }
-
-    @Override
-    public void addShape(iShape shape) {
-        shapeList.add(shape);
-        canvasManager.refreshWithHistory(shapeList, primary);
-        ShapeList.setItems(getStringList());
-    }
-
-    @Override
-    public void removeShape(iShape shape) {
-        shapeList.remove(shape);
-        canvasManager.refreshWithHistory(shapeList, primary);
-        ShapeList.setItems(getStringList());
-    }
-
-    @Override
-    public void updateShape(iShape oldShape, iShape newShape) {
-        shapeList.remove(oldShape);
-        shapeList.add(newShape);
-        canvasManager.refreshWithHistory(shapeList, primary);
-        ShapeList.setItems(getStringList());
     }
 
     @Override
@@ -753,6 +724,21 @@ GroupToggle.selectedProperty().addListener((obs, oldV, isOn) -> {
             ShapeList.setItems(getStringList());
         }
     }
+
+    public iShape getShapeAt(int index) {
+    if (index >= 0 && index < shapeList.size()) {
+        return shapeList.get(index);
+    }
+    return null; // or throw exception if you prefer
+    }
+
+    public void restoreGroupAt(int index, ShapeGroup group) {
+    if (index >= 0 && index <= shapeList.size()) {
+        shapeList.add(index, group);
+        canvasManager.refreshWithHistory(shapeList, primary);
+        ShapeList.setItems(getStringList());
+    }
+}
 
 
    /* // Create a new version snapshot

@@ -10,8 +10,9 @@ public class CommandManager {
 
     public void executeCommand(Command cmd) {
         cmd.execute();
+
         if (undoStack.size() == MAX_HISTORY) {
-            undoStack.remove(0); // remove oldest
+            undoStack.remove(0); 
         }
         undoStack.push(cmd);
         redoStack.clear();
