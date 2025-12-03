@@ -508,12 +508,38 @@ private iShape removeDecorator(iShape s, Class<? extends ShapeDecorator> clazz) 
 }
 
 public iShape toggleBorder(iShape s) {
+    iShape core = unwrap(s);
+    if (core instanceof ShapeGroup g) {
+        List<iShape> kids = new ArrayList<>();
+        for (iShape child : g.getShapes()) {
+            if (hasDecorator(child, BorderDecorator.class)) {
+                kids.add(removeDecorator(child, BorderDecorator.class));
+            } else {
+                kids.add(new BorderDecorator(child));
+            }
+        }
+        return new ShapeGroup(kids);
+    }
+
     return hasDecorator(s, BorderDecorator.class)
             ? removeDecorator(s, BorderDecorator.class)
             : new BorderDecorator(s);
 }
 
 public iShape toggleShadow(iShape s) {
+    iShape core = unwrap(s);
+    if (core instanceof ShapeGroup g) {
+        List<iShape> kids = new ArrayList<>();
+        for (iShape child : g.getShapes()) {
+            if (hasDecorator(child, ShadowDecorator.class)) {
+                kids.add(removeDecorator(child, ShadowDecorator.class));
+            } else {
+                kids.add(new ShadowDecorator(child));
+            }
+        }
+        return new ShapeGroup(kids);
+    }
+
     return hasDecorator(s, ShadowDecorator.class)
             ? removeDecorator(s, ShadowDecorator.class)
             : new ShadowDecorator(s);
