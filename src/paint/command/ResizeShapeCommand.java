@@ -1,16 +1,16 @@
 package paint.command;
 
-import paint.controller.FXMLDocumentController;
+import paint.controller.ShapeReceiver;
 import paint.model.iShape;
 
 public class ResizeShapeCommand implements Command {
-    private final FXMLDocumentController controller;
+    private final ShapeReceiver receiver;
     private final int index;
     private final iShape oldShape;
     private final iShape newShape;
 
-    public ResizeShapeCommand(FXMLDocumentController controller, int index, iShape oldShape, iShape newShape) {
-        this.controller = controller;
+    public ResizeShapeCommand(ShapeReceiver receiver, int index, iShape oldShape, iShape newShape) {
+        this.receiver = receiver;
         this.index = index;
         this.oldShape = oldShape;
         this.newShape = newShape;
@@ -18,12 +18,12 @@ public class ResizeShapeCommand implements Command {
 
     @Override
     public void execute() {
-        controller.performReplaceAt(index, newShape);
+        receiver.performReplaceAt(index, newShape);
     }
 
     @Override
     public void undo() {
-        controller.performReplaceAt(index, oldShape);
+        receiver.performReplaceAt(index, oldShape);
     }
 
     @Override

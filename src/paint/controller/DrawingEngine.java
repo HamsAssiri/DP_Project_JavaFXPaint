@@ -10,12 +10,6 @@ public interface DrawingEngine {
     
     /* redraw all shapes on the canvas */
     public void refresh(Object canvas);
-
-    public void performRemoveAt(int index) ;
-    public void performAddAt(int index, iShape shape);
-    public void performSetTopLeftAt(int index, Point2D p);
-    public void performSetFillColorAt(int index, Color c);
-    public void performReplaceAt(int index, iShape shape) ;
     
     /* return the created shapes objects */
     public iShape[] getShapes();

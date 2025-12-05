@@ -1,27 +1,27 @@
 package paint.command;
 
-import paint.controller.FXMLDocumentController;
+import paint.controller.ShapeReceiver;
 import paint.model.iShape;
 
 public class CopyShapeCommand implements Command {
-    private final FXMLDocumentController controller;
+    private final ShapeReceiver receiver;
     private final iShape copiedShape;
     private final int insertIndex;
 
-    public CopyShapeCommand(FXMLDocumentController controller, iShape copiedShape, int insertIndex) {
-        this.controller = controller;
+    public CopyShapeCommand(ShapeReceiver receiver, iShape copiedShape, int insertIndex) {
+        this.receiver = receiver;
         this.copiedShape = copiedShape;
         this.insertIndex = insertIndex;
     }
 
     @Override
     public void execute() {
-        controller.performAddAt(insertIndex, copiedShape);
+        receiver.performAddAt(insertIndex, copiedShape);
     }
 
     @Override
     public void undo() {
-        controller.performRemoveAt(insertIndex);
+        receiver.performRemoveAt(insertIndex);
     }
 
     @Override

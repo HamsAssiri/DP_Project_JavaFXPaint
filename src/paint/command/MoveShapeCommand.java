@@ -1,16 +1,16 @@
 package paint.command;
 
 import javafx.geometry.Point2D;
-import paint.controller.FXMLDocumentController;
+import paint.controller.ShapeReceiver;
 
 public class MoveShapeCommand implements Command {
-    private final FXMLDocumentController controller;
+    private final ShapeReceiver receiver;
     private final int index;
     private final Point2D oldPosition;
     private final Point2D newPosition;
 
-    public MoveShapeCommand(FXMLDocumentController controller, int index, Point2D oldPosition, Point2D newPosition) {
-        this.controller = controller;
+    public MoveShapeCommand(ShapeReceiver receiver, int index, Point2D oldPosition, Point2D newPosition) {
+        this.receiver = receiver;
         this.index = index;
         this.oldPosition = oldPosition;
         this.newPosition = newPosition;
@@ -18,12 +18,12 @@ public class MoveShapeCommand implements Command {
 
     @Override
     public void execute() {
-        controller.performSetTopLeftAt(index, newPosition);
+        receiver.performSetTopLeftAt(index, newPosition);
     }
 
     @Override
     public void undo() {
-        controller.performSetTopLeftAt(index, oldPosition);
+        receiver.performSetTopLeftAt(index, oldPosition);
     }
 
     @Override

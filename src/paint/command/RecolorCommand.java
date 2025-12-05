@@ -1,17 +1,17 @@
 package paint.command;
 
 import javafx.scene.paint.Color;
-import paint.controller.FXMLDocumentController;
+import paint.controller.ShapeReceiver;
 import paint.model.iShape;
 
 public class RecolorCommand implements Command {
-    private final FXMLDocumentController controller;
+    private final ShapeReceiver receiver;
     private final int index;
     private final Color oldColor;
     private final Color newColor;
 
-    public RecolorCommand(FXMLDocumentController controller, int index, Color oldColor, Color newColor) {
-        this.controller = controller;
+    public RecolorCommand(ShapeReceiver receiver, int index, Color oldColor, Color newColor) {
+        this.receiver = receiver;
         this.index = index;
         this.oldColor = oldColor;
         this.newColor = newColor;
@@ -19,12 +19,12 @@ public class RecolorCommand implements Command {
 
     @Override
     public void execute() {
-        controller.performSetFillColorAt(index, newColor);
+        receiver.performSetFillColorAt(index, newColor);
     }
 
     @Override
     public void undo() {
-        controller.performSetFillColorAt(index, oldColor);
+        receiver.performSetFillColorAt(index, oldColor);
     }
 
     @Override

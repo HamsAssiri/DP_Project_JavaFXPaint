@@ -111,9 +111,6 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
     //SINGLETON DP - Canvas Manager
     private CanvasManager canvasManager;
 
-    //Command Manager 
-    CommandManager cmdManager = new CommandManager();
-
 
     //Shape list management - Use iShape consistently
     private ArrayList<iShape> shapeList = new ArrayList<>(); //object creation of group
@@ -130,6 +127,12 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
     private Stack<ArrayList<iShape>> primary = new Stack<>();
     private Stack<ArrayList<iShape>> secondary = new Stack<>();
 
+     //Command Manager 
+    CommandManager cmdManager = new CommandManager();
+    
+    //Command Pattern Receiver
+    private ShapeReceiver shapeReceiver;
+    
     private VersionManager versionManager = new VersionManager();
 
 
@@ -147,8 +150,9 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
             if (!ShapeList.getSelectionModel().isEmpty()) {
                 int index = ShapeList.getSelectionModel().getSelectedIndex();
                 iShape selected = shapeList.get(index);
-                Command deleteCmd = new DeleteShapeCommand(this, selected, index);
+                Command deleteCmd = new DeleteShapeCommand(shapeReceiver, selected, index);
                 cmdManager.executeCommand(deleteCmd);
+                refreshUI();
             } else {
                 Message.setText("You need to pick a shape first to delete it.");
             }
@@ -159,8 +163,9 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
                 int index = ShapeList.getSelectionModel().getSelectedIndex();
                 Color oldColor = shapeList.get(index).getFillColor();
                 Color newColor = ColorBox.getValue();
-                Command recolorCmd = new RecolorCommand(this, index, oldColor, newColor);
+                Command recolorCmd = new RecolorCommand(shapeReceiver, index, oldColor, newColor);
                 cmdManager.executeCommand(recolorCmd);
+                refreshUI();
             } else {
                 Message.setText("You need to pick a shape first to recolor it.");
             }
@@ -199,6 +204,7 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
                 return;
             }
             cmdManager.undo();
+            refreshUI();
         }
 
         if (event.getSource() == RedoBtn) {
@@ -207,6 +213,7 @@ public class FXMLDocumentController implements Initializable, DrawingEngine {
                 return;
             }
             cmdManager.redo();
+            refreshUI();
         }
 
         if (event.getSource() == SaveBtn) {
@@ -261,8 +268,9 @@ public void onGroupToggle(ActionEvent e) {
         //var selected = ShapeList.getSelectionModel().getSelectedIndices();
         ObservableList<Integer> selected = ShapeList.getSelectionModel().getSelectedIndices();
         if (selected.size() >= 2) {
-            Command groupCmd = new GroupShapesCommand(this, selected);
+            Command groupCmd = new GroupShapesCommand(shapeReceiver, selected);
             cmdManager.executeCommand(groupCmd);
+            refreshUI();
             Message.setText("Grouped selected shapes");
          
         } else {
@@ -272,8 +280,9 @@ public void onGroupToggle(ActionEvent e) {
     } else {
         int idx = getSelectedGroupIndex();
         if (idx >= 0) {
-            Command ungroupCmd = new UngroupShapesCommand(this, idx);
+            Command ungroupCmd = new UngroupShapesCommand(shapeReceiver, idx);
             cmdManager.executeCommand(ungroupCmd);
+            refreshUI();
             Message.setText("Ungrouped successfully");
         } else {
             Message.setText("Select a group to ungroup");
@@ -324,46 +333,7 @@ public void createGroup() {
     Message.setText("Shapes grouped successfully");
 }
 
-// Returns the newly created ShapeGroup and its insertion index
-public ShapeGroup groupShapesAtIndices(List<Integer> indices) {
-    if (indices.size() < 2) return null;
 
-    indices.sort((a, b) -> b - a); // sort descending
-    List<iShape> selectedShapes = new ArrayList<>();
-    for (int idx : indices) {
-        selectedShapes.add(shapeList.get(idx));
-        shapeList.remove(idx);
-    }
-
-    int insertIndex = indices.get(indices.size() - 1);
-    ShapeGroup group = new ShapeGroup(selectedShapes);
-    shapeList.add(insertIndex, group);
-
-    canvasManager.refreshWithHistory(shapeList, primary);
-    ShapeList.setItems(getStringList());
-
-    return group; // return group for the command
-}
-
-
-
-public void ungroupShape(int groupIndex) {
-    ShapeGroup group = (ShapeGroup) shapeList.get(groupIndex);
-    List<iShape> children = group.getShapes();
-
-    shapeList.remove(groupIndex);
-    shapeList.addAll(groupIndex, children);
-
-   
-    ShapeList.getSelectionModel().clearSelection();
-    for (int i = 0; i < children.size(); i++) {
-        ShapeList.getSelectionModel().select(groupIndex + i);
-    }
-
-    canvasManager.refreshWithHistory(shapeList, primary);
-    ShapeList.setItems(getStringList());
-    Message.setText("Group ungrouped successfully");
-}
     public void startDrag(MouseEvent event) {
         start = new Point2D(event.getX(), event.getY());
         Message.setText("");
@@ -384,15 +354,17 @@ public void ungroupShape(int groupIndex) {
             int index = ShapeList.getSelectionModel().getSelectedIndex();
             Point2D oldP = shapeList.get(index).getTopLeft();
             Point2D newP = start;
-            Command moveCmd = new MoveShapeCommand(this, index, oldP, newP);
+            Command moveCmd = new MoveShapeCommand(shapeReceiver, index, oldP, newP);
             cmdManager.executeCommand(moveCmd);
+            refreshUI();
         } else if (copy) {
             copy = false;
             int index = ShapeList.getSelectionModel().getSelectedIndex();
             iShape copied = shapeList.get(index).clone();
             copied.setTopLeft(start);
-            Command copyCmd = new CopyShapeCommand(this, copied, shapeList.size());
+            Command copyCmd = new CopyShapeCommand(shapeReceiver, copied, shapeList.size());
             cmdManager.executeCommand(copyCmd);
+            refreshUI();
         } else if (resize) {
             resize = false;
             int index = ShapeList.getSelectionModel().getSelectedIndex();
@@ -472,8 +444,9 @@ public void ungroupShape(int groupIndex) {
             iShape oldSnapshot = selected;
             iShape newSnapshot = wrapped;
             newSnapshot.setFillColor(oldColor);
-            Command resizeCmd = new ResizeShapeCommand(this, index, oldSnapshot, newSnapshot);
+            Command resizeCmd = new ResizeShapeCommand(shapeReceiver, index, oldSnapshot, newSnapshot);
             cmdManager.executeCommand(resizeCmd);
+            refreshUI();
         }
     }
 
@@ -486,64 +459,14 @@ public void ungroupShape(int groupIndex) {
             Message.setText("Don't be in a hurry! Choose a shape first :D");
             return;
         }
-        Command addCmd = new AddShapeCommand(this, sh, shapeList.size());
+        Command addCmd = new AddShapeCommand(shapeReceiver, sh, shapeList.size());
         cmdManager.executeCommand(addCmd);
+        refreshUI();
         canvasManager.drawShape(sh);
     }
 
     //Observer DP
     // COMPOSITE UPDATE -  getStringList to handle groups
-    // ===== Helpers for decorators =====
-private boolean hasDecorator(iShape s, Class<? extends ShapeDecorator> clazz) {
-    iShape cur = s;
-    while (cur instanceof ShapeDecorator) {
-        if (clazz.isInstance(cur)) return true;
-        cur = ((ShapeDecorator) cur).getDecoratedShape();
-    }
-    return false;
-}
-
-private iShape removeDecorator(iShape s, Class<? extends ShapeDecorator> clazz) {
-    return ShapeDecorator.removeDecoratorOfClass(s, clazz);
-}
-
-public iShape toggleBorder(iShape s) {
-    iShape core = unwrap(s);
-    if (core instanceof ShapeGroup g) {
-        List<iShape> kids = new ArrayList<>();
-        for (iShape child : g.getShapes()) {
-            if (hasDecorator(child, BorderDecorator.class)) {
-                kids.add(removeDecorator(child, BorderDecorator.class));
-            } else {
-                kids.add(new BorderDecorator(child));
-            }
-        }
-        return new ShapeGroup(kids);
-    }
-
-    return hasDecorator(s, BorderDecorator.class)
-            ? removeDecorator(s, BorderDecorator.class)
-            : new BorderDecorator(s);
-}
-
-public iShape toggleShadow(iShape s) {
-    iShape core = unwrap(s);
-    if (core instanceof ShapeGroup g) {
-        List<iShape> kids = new ArrayList<>();
-        for (iShape child : g.getShapes()) {
-            if (hasDecorator(child, ShadowDecorator.class)) {
-                kids.add(removeDecorator(child, ShadowDecorator.class));
-            } else {
-                kids.add(new ShadowDecorator(child));
-            }
-        }
-        return new ShapeGroup(kids);
-    }
-
-    return hasDecorator(s, ShadowDecorator.class)
-            ? removeDecorator(s, ShadowDecorator.class)
-            : new ShadowDecorator(s);
-}
 
 @FXML
 private void handleBorderMenu(ActionEvent event) {
@@ -552,8 +475,9 @@ private void handleBorderMenu(ActionEvent event) {
         return;
     }
     int index = ShapeList.getSelectionModel().getSelectedIndex();
-    Command borderCmd = new BorderDecoratorCommand(this, index);
+    Command borderCmd = new BorderDecoratorCommand(shapeReceiver, index);
     cmdManager.executeCommand(borderCmd);
+    refreshUI();
     Message.setText("Toggled Border");
 }
 
@@ -564,8 +488,9 @@ private void handleShadowMenu(ActionEvent event) {
         return;
     }
     int index = ShapeList.getSelectionModel().getSelectedIndex();
-    Command shadowCmd = new ShadowDecoratorCommand(this, index);
+    Command shadowCmd = new ShadowDecoratorCommand(shapeReceiver, index);
     cmdManager.executeCommand(shadowCmd);
+    refreshUI();
     Message.setText("Toggled Shadow");
 }
 
@@ -618,6 +543,9 @@ public ObservableList<String> getStringList() {
 
         canvasManager = CanvasManager.getInstance();
         canvasManager.initializeCanvas(CanvasBox);
+        
+        // Initialize the ShapeReceiver for Command Pattern
+        shapeReceiver = new ShapeReceiver(shapeList, canvasManager, primary);
         
 
 
@@ -713,68 +641,10 @@ GroupToggle.selectedProperty().addListener((obs, oldV, isOn) -> {
         Message.setText("Not supported yet.");
     }   
 
-    public void performRemoveAt(int index) {
-        if (index >= 0 && index < shapeList.size()) {
-            shapeList.remove(index);
-            canvasManager.refreshWithHistory(shapeList, primary);
-            ShapeList.setItems(getStringList());
-        }
-    }
-
-    public void performAddAt(int index, iShape shape) {
-        shapeList.add(index, shape);
-        canvasManager.refreshWithHistory(shapeList, primary);
+    // Helper method to refresh UI after command execution
+    public void refreshUI() {
         ShapeList.setItems(getStringList());
     }
-
-    public void performSetTopLeftAt(int index, Point2D p) {
-        if (index >= 0 && index < shapeList.size()) {
-            shapeList.get(index).setTopLeft(p);
-            canvasManager.refreshWithHistory(shapeList, primary);
-            ShapeList.setItems(getStringList());
-        }
-    }
-
-    public void performSetFillColorAt(int index, Color c) {
-        if (index >= 0 && index < shapeList.size()) {
-            shapeList.get(index).setFillColor(c);
-            canvasManager.refreshWithHistory(shapeList, primary);
-            ShapeList.setItems(getStringList());
-        }
-    }
-
-    public void performReplaceAt(int index, iShape shape) {
-        if (index >= 0 && index < shapeList.size()) {
-            shapeList.set(index, shape);
-            canvasManager.refreshWithHistory(shapeList, primary);
-            ShapeList.setItems(getStringList());
-        }
-    }
-
-    public iShape getShapeAt(int index) {
-    if (index >= 0 && index < shapeList.size()) {
-        return shapeList.get(index);
-    }
-    return null; // or throw exception if you prefer
-    }
-
-    public void restoreGroupAt(int index, ShapeGroup group) {
-    if (index >= 0 && index <= shapeList.size()) {
-        shapeList.add(index, group);
-        canvasManager.refreshWithHistory(shapeList, primary);
-        ShapeList.setItems(getStringList());
-    }
-}
-
-
-   /* // Create a new version snapshot
-   public CanvasVersionMemento createVersion(String name) {
-    String versionName = (name == null || name.isEmpty())
-            ? "Version " + (versionManager.size() + 1)
-            : name;
-
-    return new CanvasVersionMemento(shapeList, versionName);
-}*/
     //Updated createVersion method using clone from shape class to save the states properly
     public CanvasVersionMemento createVersion(String name) {
         String versionName = (name == null || name.isEmpty())

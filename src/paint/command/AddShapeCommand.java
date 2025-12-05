@@ -1,27 +1,27 @@
 package paint.command;
 
-import paint.controller.FXMLDocumentController;
+import paint.controller.ShapeReceiver;
 import paint.model.iShape;
 
 public class AddShapeCommand implements Command {
-    private final FXMLDocumentController controller;
+    private final ShapeReceiver receiver;
     private final iShape shape;
     private final int insertIndex;
 
-    public AddShapeCommand(FXMLDocumentController controller, iShape shape, int insertIndex) {
-        this.controller = controller;
+    public AddShapeCommand(ShapeReceiver receiver, iShape shape, int insertIndex) {
+        this.receiver = receiver;
         this.shape = shape;
         this.insertIndex = insertIndex;
     }
 
     @Override
     public void execute() {
-        controller.performAddAt(insertIndex, shape);
+        receiver.performAddAt(insertIndex, shape);
     }
 
     @Override
     public void undo() {
-        controller.performRemoveAt(insertIndex);
+        receiver.performRemoveAt(insertIndex);
     }
 
     @Override

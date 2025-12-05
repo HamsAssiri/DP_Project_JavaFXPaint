@@ -1,31 +1,31 @@
 package paint.command;
 
-import paint.controller.FXMLDocumentController;
+import paint.controller.ShapeReceiver;
 import paint.model.iShape;
 import paint.model.ShapeDecorator;
 import paint.model.ShadowDecorator;
 
 public class ShadowDecoratorCommand implements Command {
-    private final FXMLDocumentController controller;
+    private final ShapeReceiver receiver;
     private final int index;
     private iShape oldShape;
     private iShape newShape;
 
-    public ShadowDecoratorCommand(FXMLDocumentController controller, int index) {
-        this.controller = controller;
+    public ShadowDecoratorCommand(ShapeReceiver receiver, int index) {
+        this.receiver = receiver;
         this.index = index;
     }
 
     @Override
     public void execute() {
-        oldShape = controller.getShapeAt(index);
-        newShape = controller.toggleShadow(oldShape); // create a new shape with shadow toggled
-        controller.performReplaceAt(index, newShape);
+        oldShape = receiver.getShapeAt(index);
+        newShape = receiver.toggleShadow(oldShape); // create a new shape with shadow toggled
+        receiver.performReplaceAt(index, newShape);
     }
 
     @Override
     public void undo() {
-        controller.performReplaceAt(index, oldShape);
+        receiver.performReplaceAt(index, oldShape);
     }
 
     @Override
